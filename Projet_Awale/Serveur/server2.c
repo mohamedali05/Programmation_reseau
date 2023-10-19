@@ -6,6 +6,9 @@
 #include "server2.h"
 #include "client2.h"
 
+Challenge challenges[MAX_CLIENTS];
+int num_challenges = 0;
+
 static void init(void)
 {
 #ifdef WIN32
@@ -247,6 +250,37 @@ static void handle_list_request(Client client, Client *clients, int actual) {
     }
 
     write_client(client.sock, response);
+}
+
+static void handle_challenge_request(Client sender, Client *clients, int actual, const char *buffer){
+    Client *target = extract_target_by_name(clients, actual, buffer );
+
+    if (target != NULL) {
+        // Créez une nouvelle invitation.
+        challenges[num_challenges].challenger_sock = sender.sock;
+        challenges[num_challenges].challenged_sock = target->sock;
+        challenges[num_challenges].accepted = -1;  // -1 indique en attente d'une réponse.
+
+        // Envoyez l'invitation au client ciblé.
+        char invitation[BUF_SIZE];
+        snprintf(invitation, BUF_SIZE, "%s vous a défié. /accept ou /refuse pour répondre.", sender.name);
+        write_client(target->sock, invitation);
+
+        // Incrémente le compteur des invitations.
+        num_challenges++;
+    }
+}
+
+static Client* extract_target_by_name(Client* clients , const char* buffer, int actual){
+   for (int i = 0; i < actual; i++) {
+         char *name = clients[i].name;
+        // Check if the name is present in the buffer
+        if (strstr(buffer, name) != NULL) {
+            return &(clients[i]); // Name found in the sentence
+        }
+    }
+    
+    return NULL; // No name found in the sentence
 }
 
 int main(int argc, char **argv)

@@ -34,6 +34,12 @@ typedef struct in_addr IN_ADDR;
 #define BUF_SIZE    1024
 
 #include "client2.h"
+typedef struct {
+    int challenger_sock;  // Le socket du client qui envoie le défi.
+    int challenged_sock;  // Le socket du client qui reçoit le défi.
+    int accepted;         // Indique si le défi a été accepté (1) ou refusé (0).
+} Challenge;
+
 
 static void init(void);
 static void end(void);
@@ -46,5 +52,6 @@ static void send_message_to_all_clients(Client *clients, Client client, int actu
 static void remove_client(Client *clients, int to_remove, int *actual);
 static void clear_clients(Client *clients, int actual);
 static void handle_list_request (Client client, Client *clients, int actual); 
-
+static void handle_challenge_request(Client sender, Client *clients, int actual, const char *buffer) ; 
+static  Client* extract_target_by_name(Client* clients , const char* name, int actual) ; 
 #endif /* guard */
