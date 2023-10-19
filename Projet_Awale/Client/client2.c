@@ -55,7 +55,10 @@ static void app(const char *address, const char *name)
       if(FD_ISSET(STDIN_FILENO, &rdfs))
       {
          fgets(buffer, BUF_SIZE - 1, stdin);
-         {
+         if (strcmp(buffer, "/list") == 0) {
+            // If the user enters "/list", request the list of online usernames
+            write_server(sock, "/list");
+         }else{
             char *p = NULL;
             p = strstr(buffer, "\n");
             if(p != NULL)

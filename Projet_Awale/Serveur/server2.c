@@ -101,12 +101,19 @@ static void app(void)
          int i = 0;
          for(i = 0; i < actual; i++)
          {
+
             /* a client is talking */
             if(FD_ISSET(clients[i].sock, &rdfs))
             {
                Client client = clients[i];
-               int c = read_client(clients[i].sock, buffer);
+               int c = read_client(clients[i].sock, buffer) ; 
+               printf("le buffer : %s \n",buffer) ; 
                /* client disconnected */
+               if (strcmp(buffer, "/list") == 0) {
+                // Handle the "/list" command
+                printf("c'est passé \n") ; 
+                handle_list_request(clients[i], clients, actual);
+               } 
                if(c == 0)
                {
                   closesocket(clients[i].sock);
@@ -119,6 +126,7 @@ static void app(void)
                {
                   send_message_to_all_clients(clients, client, actual, buffer, 0);
                }
+               
                break;
             }
          }
@@ -184,7 +192,7 @@ static int init_connection(void)
 
    if(bind(sock,(SOCKADDR *) &sin, sizeof sin) == SOCKET_ERROR)
    {
-      perror("bind()");
+      perror("bind()") ;
       exit(errno);
    }
 
@@ -225,6 +233,20 @@ static void write_client(SOCKET sock, const char *buffer)
       perror("send()");
       exit(errno);
    }
+}
+static void handle_list_request(Client client, Client *clients, int actual) {
+    char response[BUF_SIZE];
+    response[0] = 0;
+
+   
+    printf("handle_list_request \n") ; 
+
+    for (int i = 0; i < actual; i++) {
+        strncat(response, clients[i].name, BUF_SIZE - 1);
+        strncat(response, "\n", BUF_SIZE - strlen(response) - 1);
+    }
+
+    write_client(client.sock, response);
 }
 
 int main(int argc, char **argv)

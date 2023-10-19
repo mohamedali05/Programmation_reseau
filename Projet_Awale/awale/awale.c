@@ -84,7 +84,7 @@ void turn(int player)
             if (tab[choice] > 0)
                 break;
         }
-        printf("Illegal move. Choose again.\n");
+        printf("Illegal move. Choose again.\n"); 
     }
     int cursor = choice;
     while (1)
