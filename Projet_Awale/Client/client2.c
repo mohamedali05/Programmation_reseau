@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "client2.h"
+#include "awale_client.h"
 
 static void init(void)
 {
