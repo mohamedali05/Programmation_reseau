@@ -110,7 +110,7 @@ void turn(int player)
 
 void gameLoop()
 {
-    resetTable(2);
+    resetTable(4);
     while (1)
     {
         printTable();

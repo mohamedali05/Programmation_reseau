@@ -109,14 +109,8 @@ static void app(void)
             if(FD_ISSET(clients[i].sock, &rdfs))
             {
                Client client = clients[i];
-               int c = read_client(clients[i].sock, buffer) ; 
-               printf("le buffer : %s \n",buffer) ; 
-               /* client disconnected */
-               if (strcmp(buffer, "/list") == 0) {
-                // Handle the "/list" command
-                printf("c'est passé \n") ; 
-                handle_list_request(clients[i], clients, actual);
-               } 
+               int c = read_client(clients[i].sock, buffer);  
+               /* client disconnected */ 
                if(c == 0)
                {
                   closesocket(clients[i].sock);
@@ -127,7 +121,13 @@ static void app(void)
                }
                else
                {
-                  send_message_to_all_clients(clients, client, actual, buffer, 0);
+                  if (strcmp(buffer, "/list") == 0) {
+                     // Handle the "/list" command 
+                     handle_list_request(clients[i], clients, actual);
+                  } else if ((strstr(buffer, "/challenge") != NULL)) {
+                     handle_challenge_request(clients[i], clients, actual, buffer);
+                  }
+                  //send_message_to_all_clients(clients, client, actual, buffer, 0);
                }
                
                break;
@@ -246,14 +246,16 @@ static void handle_list_request(Client client, Client *clients, int actual) {
 
     for (int i = 0; i < actual; i++) {
         strncat(response, clients[i].name, BUF_SIZE - 1);
-        strncat(response, "\n", BUF_SIZE - strlen(response) - 1);
+        if (i != actual -1) {
+            strncat(response, "\n", BUF_SIZE - strlen(response) - 1);
+        }
     }
-
-    write_client(client.sock, response);
+   write_client(client.sock, "Liste des joueurs disponibles \n");
+   write_client(client.sock, response);
 }
 
 static void handle_challenge_request(Client sender, Client *clients, int actual, const char *buffer){
-    Client *target = extract_target_by_name(clients, actual, buffer );
+    Client *target = extract_target_by_name(clients, buffer, actual);
 
     if (target != NULL) {
         // Créez une nouvelle invitation.

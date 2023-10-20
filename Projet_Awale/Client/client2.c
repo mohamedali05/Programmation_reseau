@@ -58,7 +58,10 @@ static void app(const char *address, const char *name)
          if (strcmp(buffer, "/list") == 0) {
             // If the user enters "/list", request the list of online usernames
             write_server(sock, "/list");
-         }else{
+         } else if ((strstr(buffer, "/challenge") != NULL)) {
+            // If the user enters "/challenge [pseudo]", request a challenge
+            write_server(sock, buffer);
+         } else {
             char *p = NULL;
             p = strstr(buffer, "\n");
             if(p != NULL)
