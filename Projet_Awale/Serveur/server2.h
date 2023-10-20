@@ -52,6 +52,9 @@ static void send_message_to_all_clients(Client *clients, Client client, int actu
 static void remove_client(Client *clients, int to_remove, int *actual);
 static void clear_clients(Client *clients, int actual);
 static void handle_list_request (Client client, Client *clients, int actual); 
-static void handle_challenge_request(Client sender, Client *clients, int actual, const char *buffer) ; 
+static void handle_challenge_request(Client sender, Client *clients, int actual, const char *buffer) ;
+static void accept_challenge_request(Client sender);
+static void refuse_challenge_request(Client sender);
+static int find_challenge_by_challenged_client(Client challenged);
 static  Client* extract_target_by_name(Client* clients , const char* name, int actual) ; 
 #endif /* guard */

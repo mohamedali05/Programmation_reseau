@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "client2.h"
+#include "awale_client.h"
 
 static void init(void)
 {
@@ -57,9 +58,15 @@ static void app(const char *address, const char *name)
          fgets(buffer, BUF_SIZE - 1, stdin);
          if (strcmp(buffer, "/list") == 0) {
             // If the user enters "/list", request the list of online usernames
-            write_server(sock, "/list");
+            write_server(sock, buffer);
          } else if ((strstr(buffer, "/challenge") != NULL)) {
             // If the user enters "/challenge [pseudo]", request a challenge
+            write_server(sock, buffer);
+
+         } else if(strcmp(buffer, "/accept") == 0) {
+            write_server(sock, buffer);
+
+         } else if (strcmp(buffer, "/refuse") == 0) {
             write_server(sock, buffer);
          } else {
             char *p = NULL;
