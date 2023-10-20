@@ -264,8 +264,9 @@ static void handle_challenge_request(Client sender, Client *clients, int actual,
         challenges[num_challenges].accepted = -1;  // -1 indique en attente d'une réponse.
 
         // Envoyez l'invitation au client ciblé.
-        char invitation[BUF_SIZE];
-        snprintf(invitation, BUF_SIZE, "%s vous a défié. /accept ou /refuse pour répondre.", sender.name);
+        char invitation[BUF_SIZE]  ; 
+        strcpy(invitation, sender.name);
+        strcat(invitation, " vous a défié. /accept ou /refuse pour répondre");
         write_client(target->sock, invitation);
 
         // Incrémente le compteur des invitations.
