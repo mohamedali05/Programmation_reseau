@@ -101,48 +101,49 @@ void eat(int tab[], int points[], int player, int cursor)
     }
 }
 
-void turn(int tab[], int points[], int player)
-{
-    int choice;
-    while (1)
-    {
-        printf("Enter your move from 1-6, Player %d: ", player);
-        scanf("%d", &choice);
-        if (choice < LENGTH / 2 + 1 && choice > 0)
-        {
-            choice--;
+int moveAllowed(int tab[] , int* choice , int player){
+    //0 if the move isn't allowed and 1 if the move is allowed
+        if ((*choice) < LENGTH / 2 + 1 && choice > 0){
+        
+            (*choice) = (*choice) - 1 ;
             if (player == 1)
             {
-                choice = LENGTH - 1 - choice;
+                (*choice) = LENGTH/2  + (*choice);
             }
-            if (tab[choice] > 0)
+            if (tab[(*choice)] > 0){
+                return 1 ; 
+            }
+                
+        }
+        return 0  ; 
+}
+    
+
+void turn(int tab[], int points[], int player, int choice){
+    int cursor = choice;
+    while(1){
+        if (tab[choice] == 0){
                 break;
         }
-        printf("Illegal move. Choose again.\n"); 
-    }
-    int cursor = choice;
-    while (1)
-    {
-        if (tab[choice] == 0)
-        {
-            break;
-        }
         cursor++;
-        if (cursor == LENGTH)
-        {
+        if (cursor == LENGTH){
             cursor = 0;
         }
-        if (cursor == choice)
-        {
-            continue;
+        if (cursor == choice){
+            cursor++;
         }
-        tab[choice]--;
-        tab[cursor]++;
+            tab[choice]--;
+            tab[cursor]++;
     }
-    eat(tab, points, player, cursor);
+    eat(tab , points , player, cursor); 
 }
+    
 
-void gameLoop(int tab[], int points[])
+        
+    
+
+
+/*void gameLoop(int tab[], int points[])
 {
     reset(tab, points, 4);
     while (1)

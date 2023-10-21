@@ -128,11 +128,11 @@ static void app(void)
                   } else if ((strstr(buffer, "/challenge") != NULL)) {
                      handle_challenge_request(clients[i], clients, actual, buffer);
                   } else if(strcmp(buffer, "/accept") == 0 && clients[i].isChallenged) {
-                     accept_challenge_request(&clients[i]);
+                     accept_challenge_request(&clients[i], clients , actual);
                   } else if(strcmp(buffer, "/refuse") == 0 && clients[i].isChallenged) {
                      refuse_challenge_request(&clients[i]);
                   }else if (clients[i].isPlaying && estNombre(buffer)){
-                     
+                        handle_game(&clients[i] , buffer ) ; 
                   }
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
                }
@@ -313,22 +313,30 @@ static Client* extract_target_by_name(Client* clients , const char* buffer, int 
     return NULL; // No name found in the sentence
 }
 
-static void accept_challenge_request(Client* sender){
+static void accept_challenge_request(Client* sender , Client* Clients ,   int actual){
    // Envoyez l'invitation au client ciblé.
    char affichage[BUF_SIZE];
    int numChallenge = find_challenge_by_challenged_client(*sender) ; 
    char invitation[BUF_SIZE];
    int socket_challenger  = challenges[numChallenge].challenger_sock  ; 
    int socket_challenged = challenges[numChallenge].challenged_sock  ;
-   snprintf(invitation, BUF_SIZE, "%s a accepté votre challenge.", sender->name);
+   snprintf(invitation, BUF_SIZE, "%s a accepté votre challenge. \n", sender->name);
    challenges[numChallenge].accepted = 1;
+   
    reset(challenges[numChallenge].tab  ,  challenges[numChallenge].points , 4 ) ;
+   challenges[num_challenges].turn = rand()%2 ; 
 
    sender->isChallenged  = 0 ; 
-   sender->isPlaying = 1 ; 
+   sender->isPlaying = 1 ;
+   Clients[find_client_by_socket(socket_challenger,Clients , actual)].isPlaying = 1 ; 
+
+
    write_client(socket_challenger, invitation);
-   printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ; 
-   printf("%s /n",affichage) ; 
+   printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
+   write_client(socket_challenger,affichage ) ; 
+   write_client(socket_challenged, affichage) ;
+   snprintf(affichage,BUF_SIZE, "Le tour est au joueur %d",  challenges[num_challenges].turn);
+  
    write_client(socket_challenger,affichage ) ; 
    write_client(socket_challenged, affichage) ; 
 }
@@ -346,11 +354,55 @@ static void refuse_challenge_request(Client* sender){
    sender->isChallenged = 0 ; 
 }
 
+static void handle_game(Client* sender  , char* buffer ){
+   char affichage[BUF_SIZE];
+   int numChallenge = find_challenge_by_player(*sender) ;
+   int coup  = atoi(buffer) ;
+   int socket_challenger  = challenges[numChallenge].challenger_sock  ; 
+   int socket_challenged = challenges[numChallenge].challenged_sock  ;
+   if(socket_challenger == sender->sock && challenges[numChallenge].turn
+   && moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
+      //the challenger sended the request and it's his turn 
+      turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
+      printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
+      challenges[numChallenge].turn = 0 ; 
+      write_client(socket_challenger,affichage ) ; 
+      write_client(socket_challenged, affichage) ;
+      
+   }else if(socket_challenged == sender->sock && !challenges[numChallenge].turn
+   && moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
+      //the challenge sended the request and it's his turn 
+      turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
+      printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
+      challenges[numChallenge].turn = 1 ; 
+      write_client(socket_challenger,affichage ) ; 
+      write_client(socket_challenged, affichage) ;
+
+   }
+   
+}
+
 
 static int find_challenge_by_challenged_client(Client challenged){
    for (int i = 0; i < num_challenges ; i++) {
       if (challenges[i].challenged_sock == challenged.sock) {
          return i;
+      }
+   }
+}
+
+static int find_challenge_by_player(Client player){
+   for (int i = 0; i < num_challenges ; i++) {
+      if (challenges[i].challenged_sock == player.sock || challenges[i].challenger_sock == player.sock) {
+         return i;
+      }
+   }
+}
+
+static int find_client_by_socket(int sock_client, Client* Clients , int actual ){
+   for (int i = 0 ; i<actual ; i++){
+      if(Clients[i].sock == sock_client){
+         return i ; 
       }
    }
 }

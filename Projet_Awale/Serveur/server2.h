@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <stdlib.h>
 #include <arpa/inet.h>
 #include <unistd.h> /* close */
 #include <netdb.h> /* gethostbyname */
@@ -38,8 +39,9 @@ typedef struct {
     int challenger_sock;  // Le socket du client qui envoie le défi.
     int challenged_sock;  // Le socket du client qui reçoit le défi.
     int accepted;         // Indique si le défi a été accepté (1) ou refusé (0).
-    int tab[12] ; 
+    int tab[12] ; //le tableau du jeu
     int points[2] ; 
+    int turn; //0->challenger_sock /1->challenge_sock
 } Challenge;
 
 
@@ -55,9 +57,15 @@ static void remove_client(Client *clients, int to_remove, int *actual);
 static void clear_clients(Client *clients, int actual);
 static void handle_list_request (Client client, Client *clients, int actual); 
 static void handle_challenge_request(Client sender, Client *clients, int actual, const char *buffer) ;
-static void accept_challenge_request(Client* sender);
+static void accept_challenge_request(Client* sender , Client* Clients , int actual);
 static void refuse_challenge_request(Client* sender);
+static void handle_game(Client* sender  , char* buffer ) ; 
 static int find_challenge_by_challenged_client(Client challenged);
 int estNombre(const char *chaine) ; 
 static  Client* extract_target_by_name(Client* clients , const char* name, int actual) ; 
+static int find_challenge_by_player(Client player) ; 
+static int find_client_by_socket(int sock_client, Client* Clients , int actual ) ; 
+ 
+   
+
 #endif /* guard */
