@@ -8,6 +8,43 @@ void reset(int tab[], int points[], int value)
         tab[i] = value;
     }
 }
+void printTableToChar(int tab[], int points[] , char* output)
+{
+    // Initialize the string
+    output[0] = '\0';
+
+    // 11 | 10 | 9 | 8 | 7 | 6  <- player 1
+    //-------------------------
+    // 0  | 1  | 2 | 3 | 4 | 5  <- player 0
+    int pipeCount = 0;
+
+    // Format the output string
+    for (int i = LENGTH - 1; i >= LENGTH / 2; i--)
+    {
+        snprintf(output + strlen(output), 256 - strlen(output), "%d", tab[i]);
+        if (pipeCount < LENGTH / 2 - 1)
+        {
+            snprintf(output + strlen(output), 256 - strlen(output), " | ");
+        }
+        pipeCount++;
+    }
+
+    snprintf(output + strlen(output), 256 - strlen(output), "  Player 1: %d\n", points[1]);
+    pipeCount = 0;
+
+    for (int i = 0; i < LENGTH / 2; i++)
+    {
+        snprintf(output + strlen(output), 256 - strlen(output), "%d", tab[i]);
+        if (pipeCount < LENGTH / 2 - 1)
+        {
+            snprintf(output + strlen(output), 256 - strlen(output), " | ");
+        }
+        pipeCount++;
+    }
+
+    snprintf(output + strlen(output), 256 - strlen(output), "  Player 0: %d\n", points[0]);
+
+}
 
 void printTable(int tab[], int points[])
 {

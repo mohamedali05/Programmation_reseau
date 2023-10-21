@@ -128,9 +128,11 @@ static void app(void)
                   } else if ((strstr(buffer, "/challenge") != NULL)) {
                      handle_challenge_request(clients[i], clients, actual, buffer);
                   } else if(strcmp(buffer, "/accept") == 0 && clients[i].isChallenged) {
-                     accept_challenge_request(clients[i]);
+                     accept_challenge_request(&clients[i]);
                   } else if(strcmp(buffer, "/refuse") == 0 && clients[i].isChallenged) {
-                     refuse_challenge_request(clients[i]);
+                     refuse_challenge_request(&clients[i]);
+                  }else if (clients[i].isPlaying && estNombre(buffer)){
+                     
                   }
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
                }
@@ -259,6 +261,24 @@ static void handle_list_request(Client client, Client *clients, int actual) {
    write_client(client.sock, response);
 }
 
+int estNombre(const char *chaine) {
+    // Vérifier si la chaîne est vide ou nulle
+    if (chaine == NULL || chaine[0] == '\0') {
+        return 0;
+    }
+    // Indice pour parcourir la chaîne
+    int i = 0;
+    // Parcourir le reste de la chaîne
+    while (chaine[i] != '\0') {
+        if (chaine[i] < '0' || chaine[i] > '9') {
+            return 0; // Si un caractère n'est pas un chiffre, la chaîne n'est pas un nombre
+        }
+        i++;
+    }
+
+    return 1;
+}
+
 static void handle_challenge_request(Client sender, Client *clients, int actual, const char *buffer){
     Client *target = extract_target_by_name(clients, buffer, actual);
 
@@ -274,6 +294,7 @@ static void handle_challenge_request(Client sender, Client *clients, int actual,
         char invitation[BUF_SIZE];
         snprintf(invitation, BUF_SIZE, "%s vous a défié. /accept ou /refuse pour répondre.", sender.name);
         write_client(target->sock, invitation);
+        
 
         // Incrémente le compteur des invitations.
         num_challenges++;
@@ -292,22 +313,37 @@ static Client* extract_target_by_name(Client* clients , const char* buffer, int 
     return NULL; // No name found in the sentence
 }
 
-static void accept_challenge_request(Client sender){
+static void accept_challenge_request(Client* sender){
    // Envoyez l'invitation au client ciblé.
+   char affichage[BUF_SIZE];
+   int numChallenge = find_challenge_by_challenged_client(*sender) ; 
    char invitation[BUF_SIZE];
-   snprintf(invitation, BUF_SIZE, "%s a accepté votre challenge.", sender.name);
-   challenges[find_challenge_by_challenged_client(sender)].accepted = 1;
-   write_client(challenges[find_challenge_by_challenged_client(sender)].challenger_sock, invitation);
+   int socket_challenger  = challenges[numChallenge].challenger_sock  ; 
+   int socket_challenged = challenges[numChallenge].challenged_sock  ;
+   snprintf(invitation, BUF_SIZE, "%s a accepté votre challenge.", sender->name);
+   challenges[numChallenge].accepted = 1;
+   reset(challenges[numChallenge].tab  ,  challenges[numChallenge].points , 4 ) ;
 
-
+   sender->isChallenged  = 0 ; 
+   sender->isPlaying = 1 ; 
+   write_client(socket_challenger, invitation);
+   printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ; 
+   printf("%s /n",affichage) ; 
+   write_client(socket_challenger,affichage ) ; 
+   write_client(socket_challenged, affichage) ; 
 }
 
-static void refuse_challenge_request(Client sender){
+static void refuse_challenge_request(Client* sender){
    // Envoyez l'invitation au client ciblé.
+
+   int numChallenge = find_challenge_by_challenged_client(*sender) ;
    char invitation[BUF_SIZE];
-   snprintf(invitation, BUF_SIZE, "%s a refusé votre challenge.", sender.name);
-   challenges[find_challenge_by_challenged_client(sender)].accepted = 0 ;
-   write_client(challenges[find_challenge_by_challenged_client(sender)].challenger_sock, invitation);
+   int socket_challenger  = challenges[numChallenge].challenger_sock  ; 
+   int socket_challenged = challenges[numChallenge].challenged_sock  ;
+   snprintf(invitation, BUF_SIZE, "%s a refusé votre challenge.", sender->name);
+   challenges[numChallenge].accepted = 0 ;
+   write_client(socket_challenger , invitation);
+   sender->isChallenged = 0 ; 
 }
 
 

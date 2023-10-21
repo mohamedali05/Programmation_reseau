@@ -87,6 +87,7 @@ static void app(const char *address, const char *name)
       {
          int n = read_server(sock, buffer);
          /* server down */
+         
          if(n == 0)
          {
             printf("Server disconnected !\n");

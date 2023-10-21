@@ -8,6 +8,7 @@ typedef struct
    SOCKET sock;
    char name[BUF_SIZE];
    int isChallenged;
+   int isPlaying ; 
 }Client;
 
 #endif /* guard */
