@@ -238,7 +238,7 @@ static int read_client(SOCKET sock, char *buffer)
 
 static void write_client(SOCKET sock, const char *buffer)
 {
-   if(send(sock, buffer, strlen(buffer), 0) < 0)
+  if(send(sock, buffer, strlen(buffer), 0) < 0)
    {
       perror("send()");
       exit(errno);
@@ -294,6 +294,7 @@ static void handle_challenge_request(Client sender, Client *clients, int actual,
         char invitation[BUF_SIZE];
         snprintf(invitation, BUF_SIZE, "%s vous a défié. /accept ou /refuse pour répondre.", sender.name);
         write_client(target->sock, invitation);
+        write_client(sender.sock , "challenge envoyé \n") ; 
         
 
         // Incrémente le compteur des invitations.
@@ -329,16 +330,23 @@ static void accept_challenge_request(Client* sender , Client* Clients ,   int ac
    sender->isChallenged  = 0 ; 
    sender->isPlaying = 1 ;
    Clients[find_client_by_socket(socket_challenger,Clients , actual)].isPlaying = 1 ; 
-
+   
 
    write_client(socket_challenger, invitation);
    printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
    write_client(socket_challenger,affichage ) ; 
    write_client(socket_challenged, affichage) ;
-   snprintf(affichage,BUF_SIZE, "Le tour est au joueur %d",  challenges[num_challenges].turn);
-  
-   write_client(socket_challenger,affichage ) ; 
-   write_client(socket_challenged, affichage) ; 
+   
+   
+  if (turn == 1 ){ 
+      write_client(socket_challenger,"Le tour est à vous" ) ;
+      write_client(socket_challenged,"Le tour est à votre adversaire" ) ;
+  }else{
+   write_client(socket_challenged,"Le tour est à vous" ) ;
+   write_client(socket_challenger,"Le tour est à votre adversaire" ) ;
+  }
+   
+   
 }
 
 static void refuse_challenge_request(Client* sender){
@@ -360,24 +368,37 @@ static void handle_game(Client* sender  , char* buffer ){
    int coup  = atoi(buffer) ;
    int socket_challenger  = challenges[numChallenge].challenger_sock  ; 
    int socket_challenged = challenges[numChallenge].challenged_sock  ;
-   if(socket_challenger == sender->sock && challenges[numChallenge].turn
-   && moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
-      //the challenger sended the request and it's his turn 
-      turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
-      printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
-      challenges[numChallenge].turn = 0 ; 
-      write_client(socket_challenger,affichage ) ; 
-      write_client(socket_challenged, affichage) ;
+   if(socket_challenger == sender->sock && challenges[numChallenge].turn){
+      //the challenger sended the request and it's his turn
+      if (moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
+         turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
+         printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
+         write_client(socket_challenger,affichage ) ; 
+         write_client(socket_challenged, affichage) ;
+         challenges[numChallenge].turn = 0 ; 
+         write_client(socket_challenger,"C'est le tour de ton adversaire maintenant \n" ) ;
+         write_client(socket_challenged,"C'est ton tour maintenant\n" ) ;
+      }else{
+          write_client(socket_challenger,"Mouvement illégal veuillez réessayer.\n" ) ;
+          write_client(socket_challenged, affichage) ;
+      }
       
-   }else if(socket_challenged == sender->sock && !challenges[numChallenge].turn
-   && moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
-      //the challenge sended the request and it's his turn 
-      turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
-      printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
-      challenges[numChallenge].turn = 1 ; 
-      write_client(socket_challenger,affichage ) ; 
-      write_client(socket_challenged, affichage) ;
-
+ 
+   }else if(socket_challenged == sender->sock && !challenges[numChallenge].turn){
+      if (moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
+         turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
+         printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
+         write_client(socket_challenger,affichage ) ; 
+         write_client(socket_challenged, affichage) ;
+         challenges[numChallenge].turn = 1 ; 
+         write_client(socket_challenged,"C'est le tour de ton adversaire maintenant\n" ) ;
+         write_client(socket_challenger,"C'est ton tour maintenant\n" ) ;
+      }else{
+          write_client(socket_challenged,"Mouvement illégal veuillez réessayer.\n" ) ;
+      }
+   
+   }else{
+    write_client(socket_challenged, "It's not your turn now \n") ;  
    }
    
 }
@@ -406,9 +427,6 @@ static int find_client_by_socket(int sock_client, Client* Clients , int actual )
       }
    }
 }
-
-
-
 
 
 
