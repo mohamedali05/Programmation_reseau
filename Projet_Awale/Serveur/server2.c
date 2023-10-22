@@ -127,7 +127,7 @@ static void app(void)
                      define_bio(&clients[i] , buffer) ; 
                   }
                   if (strcmp(buffer,"/list_command") == 0 ){
-                     write_client(clients[i].sock ,"taper /list pour voir la liste des personnes en ligne et /challenge [Pseudo] pour  défier une personne \n. Vous pouvez aussi à tout moment revoir la liste des commandes en retapant /list_command" ) ; 
+                     write_client(clients[i].sock ,"taper /list pour voir la liste des personnes en ligne et /challenge [Pseudo] pour  défier une personne.\nVous pouvez aussi à tout moment revoir la liste des commandes en retapant /list_command" ) ; 
                   }
                   if (strcmp(buffer, "/list") == 0) {
                      // Handle the "/list" command 
@@ -388,31 +388,38 @@ static void handle_game(Client* sender  , char* buffer ){
    int coup  = atoi(buffer) ;
    int socket_challenger  = challenges[numChallenge].challenger->sock  ; 
    int socket_challenged = challenges[numChallenge].challenged->sock  ;
-   if(socket_challenger == sender->sock && challenges[numChallenge].turn){
-      //the challenger sended the request and it's his turn
-      if (moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
-         turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
-         printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
-         write_client(socket_challenger,affichage ) ; 
-         write_client(socket_challenged, affichage) ;
-         challenges[numChallenge].turn = 0 ; 
-         write_client(socket_challenger,"C'est le tour de ton adversaire maintenant \n" ) ;
-         write_client(socket_challenged,"C'est ton tour maintenant\n" ) ;
+   if(socket_challenger == sender->sock){
+      if(challenges[numChallenge].turn) {
+         //the challenger sended the request and it's his turn
+         if (moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
+            turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
+            printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
+            write_client(socket_challenger,affichage ) ; 
+            write_client(socket_challenged, affichage) ;
+            challenges[numChallenge].turn = 0 ; 
+            write_client(socket_challenger,"C'est le tour de ton adversaire maintenant \n" ) ;
+            write_client(socket_challenged,"C'est ton tour maintenant\n" ) ;
+         }else{
+            write_client(socket_challenger,"Mouvement illégal veuillez réessayer.\n" ) ;
+            write_client(socket_challenged, affichage) ;
+         }
       }else{
-          write_client(socket_challenger,"Mouvement illégal veuillez réessayer.\n" ) ;
-          write_client(socket_challenged, affichage) ;
+         write_client(socket_challenger, "ce n'est pas ton tour maintenant \n") ;  
       }
       
- 
-   }else if(socket_challenged == sender->sock && !challenges[numChallenge].turn){
-      if (moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
-         turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
-         printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
-         write_client(socket_challenger,affichage ) ; 
-         write_client(socket_challenged, affichage) ;
-         challenges[numChallenge].turn = 1 ; 
-         write_client(socket_challenged,"C'est le tour de ton adversaire maintenant\n" ) ;
-         write_client(socket_challenger,"C'est ton tour maintenant\n" ) ;
+   }else if(socket_challenged == sender->sock){
+      if(!challenges[numChallenge].turn) {
+         if (moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
+            turn(challenges[numChallenge].tab , challenges[numChallenge].points ,  challenges[numChallenge].turn , coup ) ; 
+            printTableToChar(challenges[numChallenge].tab  ,challenges[numChallenge].points , affichage) ;
+            write_client(socket_challenger,affichage ) ; 
+            write_client(socket_challenged, affichage) ;
+            challenges[numChallenge].turn = 1 ; 
+            write_client(socket_challenged,"C'est le tour de ton adversaire maintenant\n" ) ;
+            write_client(socket_challenger,"C'est ton tour maintenant\n" ) ;
+         }else{
+            write_client(socket_challenged,"Mouvement illégal veuillez réessayer.\n" ) ;
+         }
       }else{
          write_client(socket_challenged,"Mouvement illégal veuillez réessayer.\n" ) ;
       }
@@ -420,7 +427,6 @@ static void handle_game(Client* sender  , char* buffer ){
    }else{
     write_client(sender->sock, "ce n'est pas ton tour maintenant \n") ;  
    }
-   
 }
 
 static void handle_discussion1(Client* sender  , char* buffer){

@@ -103,12 +103,12 @@ void eat(int tab[], int points[], int player, int cursor)
 
 int moveAllowed(int tab[] , int* choice , int player){
     //0 if the move isn't allowed and 1 if the move is allowed
-        if ((*choice) < LENGTH / 2 + 1 && choice > 0){
+        if ((*choice) < LENGTH / 2 + 1 && (*choice) > 0){
         
             (*choice) = (*choice) - 1 ;
             if (player == 1)
             {
-                (*choice) = LENGTH/2  + (*choice);
+                (*choice) = LENGTH - 1 - (*choice);
             }
             if (tab[(*choice)] > 0){
                 return 1 ; 
