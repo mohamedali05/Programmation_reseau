@@ -35,6 +35,8 @@ static void app(const char *address, const char *name)
 
    /* send our name */
    write_server(sock, name);
+   printf("Pour voir la liste de toutes les commandes disponibles tapez /list_command")  ;
+
 
    while(1)
    {
@@ -56,6 +58,7 @@ static void app(const char *address, const char *name)
       if(FD_ISSET(STDIN_FILENO, &rdfs))
       {
          fgets(buffer, BUF_SIZE - 1, stdin);
+         
          if (strcmp(buffer, "/list") == 0) {
             // If the user enters "/list", request the list of online usernames
             write_server(sock, buffer);
