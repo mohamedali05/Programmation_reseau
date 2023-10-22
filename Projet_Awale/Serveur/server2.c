@@ -131,6 +131,8 @@ static void app(void)
                   }else if (strcmp(buffer, "/list") == 0) {
                      // Handle the "/list" command 
                      handle_list_request(clients[i], clients, actual);
+                  }else if(strstr(buffer, "/view_bio")!= NULL){
+                     view_bio(&clients[i] ,clients , actual,   buffer) ;
                   }else if(strcmp(buffer, "/view") == 0){
                      view_list_matches(&clients[i]) ; 
                   } else if ((strstr(buffer, "/challenge") != NULL)) {
@@ -460,6 +462,15 @@ static void define_bio(Client* sender ,char*buffer){
    char* bio_start = buffer + strlen("/define_bio") ;
    strcpy(sender->bio , bio_start) ; 
    write_client(sender->sock ,"Votre bio a bien été enregistré") ; 
+}
+
+static void view_bio(Client* sender , Client* clients ,int actual , char* buffer){
+   Client *target = extract_target_by_name(clients, buffer, actual);
+   if (target == NULL){
+      write_client(sender->sock ,"Le joueur pour lequel vous voulez voir la bio n'existe pas") ; 
+      return ; 
+   }
+   write_client(sender->sock,target->bio) ; 
 }
 
 

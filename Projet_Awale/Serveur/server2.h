@@ -65,6 +65,7 @@ static void refuse_challenge_request(Client* sender);
 static void handle_game(Client* sender  , char* buffer ) ; 
 static int find_challenge_by_challenged_client(Client challenged);
 static void define_bio(Client* sender ,char*bio) ; 
+static void view_bio(Client* sender , Client* clients ,int actual , char* buffer) ; 
 static void handle_discussion1(Client* sender  , char* buffer) ;
 // c'est un raccourci pour n'envoyer un message que à notre adversaire  
 static void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual) ;
