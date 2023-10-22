@@ -35,7 +35,7 @@ static void app(const char *address, const char *name)
 
    /* send our name */
    write_server(sock, name);
-   printf("Pour voir la liste de toutes les commandes disponibles tapez /list_command")  ;
+   //printf("Pour voir la liste de toutes les commandes disponibles tapez /list_command")  ;
 
 
    while(1)
