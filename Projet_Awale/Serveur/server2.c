@@ -126,12 +126,13 @@ static void app(void)
                   if ((strstr(buffer, "/define_bio") != NULL) ){
                      define_bio(&clients[i] , buffer) ; 
                   }
-                  if (strcmp(buffer,"/list_command") == 0 ){
+                  else if (strcmp(buffer,"/list_command") == 0 ){
                      write_client(clients[i].sock ,"taper /list pour voir la liste des personnes en ligne et /challenge [Pseudo] pour  défier une personne.\nVous pouvez aussi à tout moment revoir la liste des commandes en retapant /list_command" ) ; 
-                  }
-                  if (strcmp(buffer, "/list") == 0) {
+                  }else if (strcmp(buffer, "/list") == 0) {
                      // Handle the "/list" command 
                      handle_list_request(clients[i], clients, actual);
+                  }else if(strcmp(buffer, "/view") == 0){
+                     view_list_matches(&clients[i]) ; 
                   } else if ((strstr(buffer, "/challenge") != NULL)) {
                      handle_challenge_request(&clients[i], clients, actual, buffer);
                   } else if(strcmp(buffer, "/accept") == 0 && clients[i].isChallenged) {
