@@ -35,8 +35,8 @@ static void app(const char *address, const char *name)
 
    /* send our name */
    write_server(sock, name);
-   
 
+   printf("Tapez /list_command pour voir la liste des commandes disponibles\n");
 
    while(1)
    {
@@ -58,31 +58,16 @@ static void app(const char *address, const char *name)
       if(FD_ISSET(STDIN_FILENO, &rdfs))
       {
          fgets(buffer, BUF_SIZE - 1, stdin);
-
-         if (strcmp(buffer, "/list") == 0) {
-            // If the user enters "/list", request the list of online usernames
-            write_server(sock, buffer);
-         } else if ((strstr(buffer, "/challenge") != NULL)) {
-            // If the user enters "/challenge [pseudo]", request a challenge
-            write_server(sock, buffer);
-
-         } else if(strcmp(buffer, "/accept") == 0) {
-            write_server(sock, buffer);
-
-         } else if (strcmp(buffer, "/refuse") == 0) {
-            write_server(sock, buffer);
-         } else {
-            char *p = NULL;
-            p = strstr(buffer, "\n");
-            if(p != NULL)
-            {
-               *p = 0;
-            }
-            else
-            {
-               /* fclean */
-               buffer[BUF_SIZE - 1] = 0;
-            }
+         char *p = NULL;
+         p = strstr(buffer, "\n");
+         if(p != NULL)
+         {
+            *p = 0;
+         }
+         else
+         {
+            /* fclean */
+            buffer[BUF_SIZE - 1] = 0;
          }
          write_server(sock, buffer);
       }
@@ -173,7 +158,6 @@ int main(int argc, char **argv)
    }
 
    init();
-   printf("Pour voir la liste de toutes les commandes disponibles tapez /list_command\n")  ;
 
    app(argv[1], argv[2]);
 

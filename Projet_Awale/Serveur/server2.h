@@ -44,6 +44,12 @@ typedef struct {
     int turn; //0->challenged_sock /1->challenger_sock
 } Challenge;
 
+typedef struct {
+    char command[50] ;
+    char description[200] ; 
+} Commands;
+ 
+
 
  void init(void);
  void end(void);
@@ -55,22 +61,25 @@ typedef struct {
  void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
  void remove_client(Client *clients, int to_remove, int *actual);
  void clear_clients(Client *clients, int actual);
- void handle_list_request (Client client, Client *clients, int actual); 
- void view_list_matches(Client* sender) ; 
- void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer) ;
+
+ void handle_list_request (Client* sender, Client *clients, int actual); 
+ void view_list_matches(Client* sender);
+ void define_bio(Client* sender ,char*bio); 
+ void view_bio(Client* sender , Client* clients ,int actual , char* buffer);
+
+ void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer);
  void accept_challenge_request(Client* sender , Client* Clients , int actual);
  void refuse_challenge_request(Client* sender);
- void handle_game(Client* sender  , char* buffer ) ; 
- int find_challenge_by_challenged_client(Client challenged);
- void define_bio(Client* sender ,char*bio) ; 
- void view_bio(Client* sender , Client* clients ,int actual , char* buffer) ; 
- void handle_discussion1(Client* sender  , char* buffer) ;
+ void handle_game(Client* sender  , char* buffer );  
+ void handle_discussion1(Client* sender  , char* buffer);
 // c'est un raccourci pour n'envoyer un message que à notre adversaire  
- void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual) ;
- void observe_match(Client* sender , char* buffer) ; 
-int estNombre(const char *chaine) ; 
-  Client* extract_target_by_name(Client* clients , const char* name, int actual) ; 
- int find_challenge_by_player(Client player) ; 
+ void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual);
+ void observe_match(Client* sender , char* buffer);
+ 
+ int estNombre(const char *chaine); 
+ Client* extract_target_by_name(Client* clients , const char* name, int actual);
+ int find_challenge_by_challenged_client(Client challenged);
+ int find_challenge_by_player(Client player); 
 // int find_client_by_socket(int sock_client, Client* Clients , int actual ) ; 
  
    

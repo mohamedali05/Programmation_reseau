@@ -145,7 +145,7 @@ void turn(int tab[], int points[], int player, int choice){
             tab[choice]--;
             tab[cursor]++;
     }
-    eat(tab , points , player, cursor); 
+    eat(tab, points, player, cursor); 
 }
     
 
