@@ -8,7 +8,7 @@ void reset(int tab[], int points[], int value)
         tab[i] = value;
     }
 }
-void printTableToChar(int tab[], int points[] , char* output)
+void printTableToChar(int tab[], int points[], char* nom_joueur0, char* nom_joueur1  , char* output)
 {
     // Initialize the string
     output[0] = '\0';
@@ -29,7 +29,7 @@ void printTableToChar(int tab[], int points[] , char* output)
         pipeCount++;
     }
 
-    snprintf(output + strlen(output), 256 - strlen(output), "  Player 1: %d\n", points[1]);
+    snprintf(output + strlen(output), 256 - strlen(output), "  %s : %d points\n",nom_joueur1 ,  points[1]);
     pipeCount = 0;
 
     for (int i = 0; i < LENGTH / 2; i++)
@@ -42,7 +42,7 @@ void printTableToChar(int tab[], int points[] , char* output)
         pipeCount++;
     }
 
-    snprintf(output + strlen(output), 256 - strlen(output), "  Player 0: %d\n", points[0]);
+    snprintf(output + strlen(output), 256 - strlen(output), "  %s : %d points\n", nom_joueur0  ,points[0]);
 
 }
 
@@ -78,6 +78,16 @@ void printTable(int tab[], int points[])
 int isZone(int player, int choice)
 {
     return choice / (LENGTH / 2) == player;
+}
+int isFinished(int tab[] , int points[] ){
+    if (points[0]> 3){
+        return 1 ; 
+    }
+    if (points[1]>3 ){
+        return 2 ; 
+    }
+    return 0 ; 
+    
 }
 
 void eat(int tab[], int points[], int player, int cursor)

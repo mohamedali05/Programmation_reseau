@@ -7,10 +7,11 @@
 void reset(int tab[], int points[], int value);
 int isZone(int player, int choice);
 void eat(int tab[], int points[], int player, int cursor);
+int isFinished(int tab[] , int points[] ) ; //returns 1 if the player 0 won , 2 if the player 1 won and 0 if the game isn't finished
 void turn(int tab[], int points[], int player , int choice);
 int moveAllowed(int tab[] , int* choice , int player) ; 
 //void gameLoop(int tab[], int points[]);
-void printTableToChar(int tab[], int points[], char* output) ; 
+void printTableToChar(int tab[], int points[],char* nom_joueur0, char* nom_joueur1 ,  char* output) ; 
 void printTable(int tab[], int points[]);
 
 #endif /* AWALE_H */
