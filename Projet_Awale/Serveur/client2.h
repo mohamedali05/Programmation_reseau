@@ -7,6 +7,7 @@ typedef struct
 {
    SOCKET sock;
    char name[BUF_SIZE];
+   char bio[2*BUF_SIZE] ; 
    int isChallenged;
    int isPlaying ; 
 }Client;

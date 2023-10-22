@@ -40,10 +40,10 @@ typedef struct {
     Client* challenged ; 
 
     
-    int accepted;         // Indique si le défi a été fini(2) accepté (1) ou refusé (0).
+    int accepted; // Indique si le défi a été fini(2) accepté (1) ou refusé (0).
     int tab[12] ; //le tableau du jeu
     int points[2] ; 
-    int turn; //0->challenger_sock /1->challenge_sock
+    int turn; //0->challenged_sock /1->challenger_sock
 } Challenge;
 
 
@@ -58,11 +58,16 @@ static void send_message_to_all_clients(Client *clients, Client client, int actu
 static void remove_client(Client *clients, int to_remove, int *actual);
 static void clear_clients(Client *clients, int actual);
 static void handle_list_request (Client client, Client *clients, int actual); 
+static void view_list_matches(Client* sender) ; 
 static void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer) ;
 static void accept_challenge_request(Client* sender , Client* Clients , int actual);
 static void refuse_challenge_request(Client* sender);
 static void handle_game(Client* sender  , char* buffer ) ; 
 static int find_challenge_by_challenged_client(Client challenged);
+static void define_bio(Client* sender ,char*bio) ; 
+static void handle_discussion1(Client* sender  , char* buffer) ;
+// c'est un raccourci pour n'envoyer un message que à notre adversaire  
+static void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual) ;
 int estNombre(const char *chaine) ; 
 static  Client* extract_target_by_name(Client* clients , const char* name, int actual) ; 
 static int find_challenge_by_player(Client player) ; 
