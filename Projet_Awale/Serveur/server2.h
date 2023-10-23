@@ -78,8 +78,10 @@ typedef struct {
  
  int estNombre(const char *chaine); 
  Client* extract_target_by_name(Client* clients , const char* name, int actual);
+ //préconditon : Le buffer ne doit contenir que le nom de la personne
  int find_challenge_by_challenged_client(Client challenged);
  int find_challenge_by_player(Client player); 
+
 // int find_client_by_socket(int sock_client, Client* Clients , int actual ) ; 
  
    

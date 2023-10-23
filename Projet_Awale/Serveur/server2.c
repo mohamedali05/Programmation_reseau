@@ -344,6 +344,16 @@ void handle_challenge_request(Client* sender, Client *clients, int actual, const
       write_client(sender->sock ,"Ce joueur est déjà en train de jouer ") ; 
       return ; 
    }
+   if(target == sender){
+      write_client(sender->sock ,"Vous ne pouvez pas vous challenger vous mêmes ") ;
+      return ; 
+   }
+   if(target->isChallenged){
+      write_client(sender->sock ,"Cette personne a déjà été challengé ; attendez qu'elle réponde d'abord à ce challenge ") ;
+      return ; 
+   }
+
+
    
    // Créez une nouvelle invitation.
    challenges[num_challenges].challenger = sender ; 
@@ -450,13 +460,13 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                write_client(socket_challenger,"vous avez perdu :(\n" ) ;
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
-               challenges[numChallenge].challenger->isPlaying = 0 ;
+               challenges[numChallenge].challenged->isPlaying = 0 ;
             }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
                write_client(socket_challenger,"Bravo vous avez gagné ;)\n" ) ;
                write_client(socket_challenged,"vous avez perdu :(\n" ) ;
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
-               challenges[numChallenge].challenger->isPlaying = 0 ;
+               challenges[numChallenge].challenged->isPlaying = 0 ;
             }
          }else{
             write_client(socket_challenger,"Mouvement illégal veuillez réessayer.\n" ) ;
@@ -481,13 +491,13 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                write_client(socket_challenger,"Vous avez perdu :(\n" ) ;
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
-               challenges[numChallenge].challenger->isPlaying = 0 ; 
+               challenges[numChallenge].challenged->isPlaying = 0 ; 
             }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
                write_client(socket_challenger,"Bravo, vous avez gagné ;)\n" ) ;
                write_client(socket_challenged,"Vous avez perdu :(\n" ) ;
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
-               challenges[numChallenge].challenger->isPlaying = 0 ;
+               challenges[numChallenge].challenged->isPlaying = 0 ;
             }
          }else{
             write_client(socket_challenged,"Mouvement illégal, veuillez réessayer.\n" ) ;
