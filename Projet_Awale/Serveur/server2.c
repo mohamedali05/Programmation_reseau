@@ -308,7 +308,7 @@ void define_bio(Client* sender ,char*buffer){
 }
 
 void view_bio(Client* sender , Client* clients ,int actual , char* buffer){
-   Client *target = extract_target_by_name(clients, buffer, actual);
+   Client *target = extract_target_by_name(clients, buffer+strlen("/view_bio") +1, actual);
    if (target == NULL){
       write_client(sender->sock ,"Ce joueur n'existe pas") ; 
       return ; 
@@ -335,7 +335,7 @@ void view_list_matches(Client* sender){
 }
 
 void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer){
-   Client *target = extract_target_by_name(clients, buffer, actual);
+   Client *target = extract_target_by_name(clients, buffer +strlen("/challenge") +1 , actual);
    if (target == NULL){
       write_client(sender->sock ,"Ce joueur n'existe pas") ; 
       return ; 
@@ -365,7 +365,7 @@ Client* extract_target_by_name(Client* clients , const char* buffer, int actual)
    for (int i = 0; i < actual; i++) {
          char *name = clients[i].name;
         // Check if the name is present in the buffer
-        if (strstr(buffer, name) != NULL) {
+        if (strcmp(buffer, name) == 0) {
             return &(clients[i]); // Name found in the sentence
         }
     }
@@ -543,7 +543,7 @@ int estNombre(const char *chaine) {
 
  void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual ){
    char affichage[BUF_SIZE] ;
-   Client *target = extract_target_by_name(clients, buffer, actual);
+   Client *target = extract_target_by_name(clients, buffer +strlen("/discuss") +1 , actual);
    if (target == NULL){
       write_client(sender->sock ,"Le joueur avec lequel vous voulez discuter n'a pas été trouvé") ; 
       return ; 
