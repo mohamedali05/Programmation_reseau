@@ -43,6 +43,7 @@ typedef struct {
     int points[2] ; 
     int turn; //0->challenged_sock /1->challenger_sock
     Client* observers[10];
+    int Client_disconnected ; 
     int nbObservers;
 } Challenge;
 
@@ -85,6 +86,7 @@ typedef struct {
  //préconditon : Le buffer ne doit contenir que le nom de la personne
  int find_challenge_by_challenged_client(Client challenged);
  int find_challenge_by_player(Client player); 
+ int find_challenge_By_player_for_disconnection(Client player) ; 
  void extraireEntreEspaces(const char* chaine, char* resultat, size_t tailleResultat) ; 
 // int find_client_by_socket(int sock_client, Client* Clients , int actual ) ; 
  

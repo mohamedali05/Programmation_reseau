@@ -129,7 +129,7 @@ int num_challenges = 0;
       {
          int i = 0;
          for(i = 0; i < actual; i++)
-         {
+        {
 
             /* a client is talking */
             if(FD_ISSET(clients[i].sock, &rdfs))
@@ -139,8 +139,38 @@ int num_challenges = 0;
                /* client disconnected */ 
                if(c == 0)
                {
+                  printf("un client s'est déco \n") ;
+                  int numChallenge = find_challenge_By_player_for_disconnection(clients[i]) ;
+                  challenges[numChallenge].Client_disconnected = 1 ;
+            
+                  if (strcmp(clients[i].name ,challenges[numChallenge].challenged->name) == 0){
+                     if (challenges[numChallenge].state == -1){
+                        printf("1\n") ; 
+                        write_client(challenges[numChallenge].challenger->sock , "Le client que vous avez challengé s'est déconnecté\n") ;
+                        
+                     }else if (challenges[numChallenge].state == 1){
+                        printf("2\n") ; 
+                        write_client(challenges[numChallenge].challenger->sock , "Le client avec lequel vous jouez s'est déconnecté\n") ;
+                        challenges[numChallenge].challenger->isPlaying = 0 ; 
+                        
+                     }
+                  }else{
+                     if (challenges[numChallenge].state == -1){
+                        printf("3\n") ;  
+                        write_client(challenges[numChallenge].challenged->sock , "Le client que vous avez challengé s'est déconnecté\n") ; 
+                        challenges[numChallenge].challenged->isChallenged = 0 ;
+                        
+                     }else if (challenges[numChallenge].state == 1){
+                        printf("4\n") ;
+                        write_client(challenges[numChallenge].challenged->sock , "Le client avec lequel vous jouez s'est déconnecté\n") ;
+                        challenges[numChallenge].challenged->isPlaying = 0 ;
+                          
+                     }
+                  }
+                  printf("Bonjour1\n") ; 
+                  challenges[numChallenge].state = 2 ;
+                  printf("Bonjour2\n") ;  
                   closesocket(clients[i].sock);
-
                   remove_client(clients, i, &actual);
                   strncpy(buffer, client.name, BUF_SIZE - 1);
                   strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
@@ -653,6 +683,16 @@ void stop_observe(Client* sender) {
         }
     }
     //sender->isObserving = 0;
+}
+
+int find_challenge_By_player_for_disconnection(Client player){
+   for (int i = 0; i < num_challenges ; i++) {
+      if ((challenges[i].challenged->sock == player.sock || challenges[i].challenger->sock == player.sock)&& (challenges[i].state ==1 
+      || challenges[i].state == -1)) {
+         return i;
+      }
+   }
+   return (- 1)  ; 
 }
 
 
