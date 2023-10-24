@@ -148,6 +148,7 @@ int num_challenges = 0;
                }
                else
                {
+                  printf("Buffer : %s\n", buffer);
                   if (strcmp(buffer,"/list_command") == 0 ){
                      write_client(clients[i].sock, infos_commands);
                   } else if (strcmp(buffer, "/list_players") == 0) {
@@ -169,8 +170,14 @@ int num_challenges = 0;
                   } else if(clients[i].isPlaying && (strstr(buffer, "/discuss1") != NULL)){
                      handle_discussion1(&clients[i], buffer) ; 
                   }else if((strstr(buffer, "/discuss1") == NULL) && (strstr(buffer, "/discuss") != NULL)){
-                     handle_discussion(&clients[i], buffer, clients, actual) ; 
+                     handle_discussion(&clients[i], buffer, clients, actual);
+                  } else if((strstr(buffer, "/observe") != NULL) && !clients[i].isObserving) {
+                     observe_match(&clients[i], buffer);
+                  } else if(strcmp(buffer, "/quit") == 0 && clients[i].isObserving){
+                     stop_observe(&clients[i]);
+                     clients[i].isObserving = 0; //essayer de la faire dans stop_observe !!!
                   } else {
+                     printf("IS OBSERVING : %d\n", clients[i].isObserving);
                      write_client(clients[i].sock, "La commande est incorrecte");
                   }
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
@@ -355,12 +362,11 @@ void handle_challenge_request(Client* sender, Client *clients, int actual, const
       return ; 
    }
 
-
-   
    // Créez une nouvelle invitation.
    challenges[num_challenges].challenger = sender ; 
    challenges[num_challenges].challenged = target ;    
    challenges[num_challenges].state = -1;  // -1 indique en attente d'une réponse.
+   challenges[num_challenges].nbObservers = 0;
    target->isChallenged = 1;
 
    // Envoyez l'invitation au client ciblé.
@@ -443,8 +449,8 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
    char affichage[BUF_SIZE];
    int numChallenge = find_challenge_by_player(*sender) ;
    int coup  = atoi(buffer) ;
-   int socket_challenger  = challenges[numChallenge].challenger->sock  ; 
-   int socket_challenged = challenges[numChallenge].challenged->sock  ;
+   int socket_challenger  = challenges[numChallenge].challenger->sock; 
+   int socket_challenged = challenges[numChallenge].challenged->sock;
    if(socket_challenger == sender->sock){
       if(challenges[numChallenge].turn) {
          //the challenger sended the request and it's his turn
@@ -453,6 +459,7 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
             printTableToChar(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name , affichage) ;
             write_client(socket_challenger, affichage) ; 
             write_client(socket_challenged, affichage) ;
+            send_game_to_observers(numChallenge, affichage);
             challenges[numChallenge].turn = 0 ;
             if(!isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points )){
                write_client(socket_challenger,"Au tour de votre adversaire\n" ) ;
@@ -482,8 +489,9 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
          if (moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
             turn(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].turn, coup ) ; 
             printTableToChar(challenges[numChallenge].tab, challenges[numChallenge].points ,challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name, affichage) ;
-            write_client(socket_challenger, affichage) ; 
-            write_client(socket_challenged, affichage) ;
+            write_client(socket_challenger, affichage); 
+            write_client(socket_challenged, affichage);
+            send_game_to_observers(numChallenge, affichage);
             challenges[numChallenge].turn = 1 ;
             if(!isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points)){
                write_client(socket_challenged,"Au tour de votre adversaire\n" ) ;
@@ -601,10 +609,53 @@ void extraireEntreEspaces(const char* chaine, char* resultat, size_t tailleResul
         resultat[tailleResultat - 1] = '\0';
     }
 }
+ 
+void observe_match(Client* sender, const char *buffer) {
+   char affichage[BUF_SIZE];
+   char* match = buffer + strlen("/observe ");
+   int match_id = atoi(match) - 1;
 
- void observe_match(Client* sender , char* buffer){
-   
+   sender->isObserving = 1;
+
+   // Vérifier si le match_id est valide
+   if (match_id >= 0 && match_id < num_challenges) {
+      if (challenges[match_id].nbObservers < 10) {
+         challenges[match_id].observers[challenges[match_id].nbObservers] = sender;
+         challenges[match_id].nbObservers++; 
+         printTableToChar(challenges[match_id].tab, challenges[match_id].points ,challenges[match_id].challenged->name, challenges[match_id].challenger->name, affichage) ;
+         write_client(sender->sock, affichage);
+      } else {
+         write_client(sender->sock ,"Il y a dejà trop d'observateurs pour ce match"); 
+      }
+   } else {
+      write_client(sender->sock ,"Le match n'a pas été trouvé"); 
+   }
 }
+
+void send_game_to_observers(int numChallenge, const char* affichage) {
+   for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
+      write_client(challenges[numChallenge].observers[i]->sock, affichage);
+   }
+}
+
+void stop_observe(Client* sender) {
+    for (int i = 0; i < num_challenges; i++) {
+        for (int j = 0; j < challenges[i].nbObservers; j++) {
+            // Si le client est trouvé dans les observateurs du challenge
+            if (challenges[i].observers[j] == sender) {
+                // Retirer le client en décalant les observateurs restants
+                for (int k = j; k < challenges[i].nbObservers - 1; k++) {
+                    challenges[i].observers[k] = challenges[i].observers[k + 1];
+                }
+                challenges[i].nbObservers--;
+                return;
+            }
+        }
+    }
+    //sender->isObserving = 0;
+}
+
+
 /*
  int find_client_by_socket(int sock_client, Client* Clients , int actual ){
    for (int i = 0 ; i<actual ; i++){

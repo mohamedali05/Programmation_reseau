@@ -9,7 +9,8 @@ typedef struct
    char name[BUF_SIZE];
    char bio[2*BUF_SIZE] ; 
    int isChallenged;
-   int isPlaying ; 
+   int isPlaying;
+   int isObserving;
 }Client;
 
 #endif /* guard */

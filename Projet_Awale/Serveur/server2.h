@@ -42,6 +42,8 @@ typedef struct {
     int tab[12] ; //le tableau du jeu
     int points[2] ; 
     int turn; //0->challenged_sock /1->challenger_sock
+    Client* observers[10];
+    int nbObservers;
 } Challenge;
 
 typedef struct {
@@ -74,7 +76,9 @@ typedef struct {
  void handle_discussion1(Client* sender  , char* buffer);
 // c'est un raccourci pour n'envoyer un message que à notre adversaire  
  void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual);
- void observe_match(Client* sender , char* buffer);
+ void observe_match(Client* sender, const char *buffer);
+ void send_game_to_observers(int numChallenge, const char* affichage);
+ void stop_observe(Client* sender);
  
  int estNombre(const char *chaine); 
  Client* extract_target_by_name(Client* clients , const char* name, int actual);
