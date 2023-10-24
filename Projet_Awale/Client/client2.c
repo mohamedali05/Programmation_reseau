@@ -159,6 +159,17 @@ int main(int argc, char **argv)
 
    init();
 
+   printf("\n");
+   printf("   _____                 .__          \n");
+   printf("  /  _  \\__  _  _______  |  |   ____  \n");
+   printf(" /  /_\\  \\ \\/ \\/ /\\__  \\ |  | _/ __ \\ \n");
+   printf("/    |    \\     /  / __ \\|  |_\\  ___/ \n");
+   printf("\\____|__  /\\/\\_/  (____  /____/\\___  >\n");
+   printf("        \\/             \\/          \\/ \n");
+
+   printf("Press Enter to Play");
+   getchar();
+
    app(argv[1], argv[2]);
 
    end();
