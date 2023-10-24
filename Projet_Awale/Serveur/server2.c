@@ -140,6 +140,7 @@ int num_challenges = 0;
                if(c == 0)
                {
                   closesocket(clients[i].sock);
+
                   remove_client(clients, i, &actual);
                   strncpy(buffer, client.name, BUF_SIZE - 1);
                   strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
@@ -335,6 +336,7 @@ void view_list_matches(Client* sender){
 }
 
 void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer){
+   
    Client *target = extract_target_by_name(clients, buffer +strlen("/challenge") +1 , actual);
    if (target == NULL){
       write_client(sender->sock ,"Ce joueur n'existe pas") ; 
@@ -553,7 +555,9 @@ int estNombre(const char *chaine) {
 
  void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual ){
    char affichage[BUF_SIZE] ;
-   Client *target = extract_target_by_name(clients, buffer +strlen("/discuss") +1 , actual);
+   char name[BUF_SIZE] ; 
+   extraireEntreEspaces(buffer , name , sizeof(name)) ; 
+   Client *target = extract_target_by_name(clients, name , actual);
    if (target == NULL){
       write_client(sender->sock ,"Le joueur avec lequel vous voulez discuter n'a pas été trouvé") ; 
       return ; 
@@ -564,6 +568,40 @@ int estNombre(const char *chaine) {
    strcat(affichage  , buffer_start) ;
    write_client(target->sock,affichage ) ; 
 }
+
+void extraireEntreEspaces(const char* chaine, char* resultat, size_t tailleResultat) {
+    // Recherche du premier espace dans la chaîne
+    const char* premierEspace = strchr(chaine, ' ');
+
+    if (premierEspace == NULL) {
+        // Si le premier espace n'est pas trouvé, on renvoie une chaîne vide
+        resultat[0] = '\0';
+        return;
+    }
+
+    // Recherche du deuxième espace à partir du premier espace trouvé
+    const char* deuxiemeEspace = strchr(premierEspace + 1, ' ');
+
+    if (deuxiemeEspace == NULL) {
+        // Si le deuxième espace n'est pas trouvé, on renvoie une chaîne vide
+        resultat[0] = '\0';
+        return;
+    }
+
+    // Calcul de la longueur de la sous-chaîne à extraire
+    size_t longueur = deuxiemeEspace - (premierEspace + 1);
+
+    if (longueur < tailleResultat) {
+        // Copie de la sous-chaîne dans le résultat
+        strncpy(resultat, premierEspace + 1, longueur);
+        resultat[longueur] = '\0';
+    } else {
+        // Si la taille du résultat est insuffisante, on tronque la sous-chaîne
+        strncpy(resultat, premierEspace + 1, tailleResultat - 1);
+        resultat[tailleResultat - 1] = '\0';
+    }
+}
+
  void observe_match(Client* sender , char* buffer){
    
 }
