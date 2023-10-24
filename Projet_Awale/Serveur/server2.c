@@ -46,10 +46,16 @@ int num_challenges = 0;
     {"/accept", "Accepter un challenge en attente"},
     {"/refuse", "Refuser un challenge en attente"},
 
-    {"/define_bio [your_bio]", "Définir sa biographie"},
+    {"/discuss [pseudo] [text]", "Envoyer le texte [text] à [pseudo]"},
+    {"/discuss1 [text]", "Envoyer le texte [text] au joueur adverse lors d'une partie"},
+
+    {"/define_bio [your_bio]", "Définir sa biographie avec [your_bio]"},
     {"/view_bio [pseudo]", "Voir la biographie de [pseudo]"},
 
     {"/view_matches", "Voir les matchs en cours"},
+    {"/observe [id_match]", "Spectate le match [id]"},
+    {"/quit", "Arrêter de spectate un match"},
+
 
     {"/list_players", "Voir la liste des joueurs en ligne"},
     {"/list_command", "Revoir la liste des commandes disponibles"},
@@ -470,12 +476,20 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
+               for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+                  challenges[numChallenge].observers[i] = NULL;
+               }
+               challenges[numChallenge].nbObservers = 0;
             }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
                write_client(socket_challenger,"Bravo vous avez gagné ;)\n" ) ;
                write_client(socket_challenged,"vous avez perdu :(\n" ) ;
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
+               for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+                  challenges[numChallenge].observers[i] = NULL;
+               }
+               challenges[numChallenge].nbObservers = 0;
             }
          }else{
             write_client(socket_challenger,"Mouvement illégal veuillez réessayer.\n" ) ;
@@ -501,13 +515,21 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                write_client(socket_challenger,"Vous avez perdu :(\n" ) ;
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
-               challenges[numChallenge].challenged->isPlaying = 0 ; 
+               challenges[numChallenge].challenged->isPlaying = 0 ;
+               for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+                  challenges[numChallenge].observers[i] = NULL;
+               }
+               challenges[numChallenge].nbObservers = 0;
             }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
                write_client(socket_challenger,"Bravo, vous avez gagné ;)\n" ) ;
                write_client(socket_challenged,"Vous avez perdu :(\n" ) ;
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
+               for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+                  challenges[numChallenge].observers[i] = NULL;
+               }
+               challenges[numChallenge].nbObservers = 0;
             }
          }else{
             write_client(socket_challenged,"Mouvement illégal, veuillez réessayer.\n" ) ;
