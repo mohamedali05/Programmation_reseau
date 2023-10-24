@@ -7,7 +7,7 @@
 #include "client2.h"
 #include "awale_serveur.h"
 
-Challenge challenges[MAX_CLIENTS];
+Challenge challenges[MAX_CHALLENGES];
 int num_challenges = 0;
 
  void init(void)
@@ -30,6 +30,23 @@ int num_challenges = 0;
 #endif
 }
 
+int main(int argc, char **argv)
+{
+   init();
+
+   loadNumChallenges();
+   loadChallenges();
+
+   app();
+
+   sauvegardeNumChallenges();
+   sauvegardeChallenges();
+
+   end();
+
+   return EXIT_SUCCESS;
+}
+
  void app(void)
 {
    SOCKET sock = init_connection();
@@ -39,6 +56,8 @@ int num_challenges = 0;
    int max = sock;
    /* an array for all clients */
    Client clients[MAX_CLIENTS];
+   /* load Clients */
+   loadClients(clients);
 
    // list of all commands for the players
    Commands commandList[] = {
@@ -182,6 +201,7 @@ int num_challenges = 0;
       }
    }
 
+   sauvegardeClients(clients);
    clear_clients(clients, actual);
    end_connection(sock);
 }
@@ -615,19 +635,141 @@ void extraireEntreEspaces(const char* chaine, char* resultat, size_t tailleResul
 }
 */
 
+int sauvegardeChallenges() {
+   FILE *file;
+   file = fopen("challenges.dat", "wb");
 
+   if (file == NULL) {
+        perror("Error opening the file");
+        return 1;
+   }
 
+   // Write the entire array to the file
+   fwrite(challenges, sizeof(Challenge), MAX_CHALLENGES, file);
 
-
-
-
-int main(int argc, char **argv)
-{
-   init();
-
-   app();
-
-   end();
-
-   return EXIT_SUCCESS;
+   fclose(file);
+   return 0;
 }
+
+int sauvegardeNumChallenges() {
+   FILE *file;
+   file = fopen("number.txt", "w");  // "w" mode for writing
+
+   if (file == NULL) {
+      perror("Error opening the file");
+      return 1;
+   }
+
+   fprintf(file, "%d", num_challenges);
+
+   fclose(file);
+   return 0;
+}
+
+int sauvegardeClients(const Client *clients) {
+   FILE *file;
+   file = fopen("clients.dat", "wb");
+
+   if (file == NULL) {
+        perror("Error opening the file");
+        return 1;
+   }
+
+   // Write the entire array to the file
+   fwrite(clients, sizeof(Client), MAX_CLIENTS, file);
+
+   fclose(file);
+
+   return 0;
+}
+
+int loadChallenges() {
+   FILE *file;
+   file = fopen("challenges.dat", "rb");
+
+   if (file == NULL) {
+        //perror("Error opening the file");
+        printf("Unable to load data");
+        return 1;
+   }
+
+   // Read the entire array from the file
+   fread(challenges, sizeof(Challenge), MAX_CHALLENGES, file);
+   printChallenge(&challenges[0]);
+
+   fclose(file);
+   return 0;
+}
+
+int loadNumChallenges() {
+    FILE *file;
+    file = fopen("number.txt", "r");  // "r" mode for reading
+
+    if (file == NULL) {
+        perror("Error opening the file");
+        return 1;
+    }
+
+    if (fscanf(file, "%d", &num_challenges) != 1) {
+        printf("Error reading from the file.\n");
+        return 1;
+    }
+
+    fclose(file);
+
+    printf("Retrieved number: %d\n", num_challenges);
+
+    return 0;
+}
+
+int loadClients(const Client *clients) {
+   FILE *file;
+   file = fopen("clients.dat", "rb");
+
+   if (file == NULL) {
+        //perror("Error opening the file");
+        printf("Unable to load data");
+        return 1;
+   }
+
+   // Read the entire array from the file
+   fread(clients, sizeof(Client), MAX_CLIENTS, file);
+   //printChallenge(&challenges[0]);
+
+   fclose(file);
+   return 0;
+}
+
+void printChallenge(const Challenge *challenge) {
+    printf("Challenge Information:\n");
+    printf("Challenger: %p\n", (void*)challenge->challenger);
+    printf("Challenged: %p\n", (void*)challenge->challenged);
+    printf("State: %d\n", challenge->state);
+    
+    printf("Tab: [");
+    for (int i = 0; i < 12; i++) {
+        printf("%d", challenge->tab[i]);
+        if (i < 11) {
+            printf(", ");
+        }
+    }
+    printf("]\n");
+
+    printf("Points: [%d, %d]\n", challenge->points[0], challenge->points[1]);
+    
+    printf("Turn: %s\n", (challenge->turn == 0) ? "challenged_sock" : "challenger_sock");
+}
+
+void printClient(const Client *client)
+{
+    printf("Client Information:\n");
+    printf("Socket: %lld\n", (long long)client->sock);
+    printf("Name: %s\n", client->name);
+    printf("Bio: %s\n", client->bio);
+    printf("Is Challenged: %d\n", client->isChallenged);
+    printf("Is Playing: %d\n", client->isPlaying);
+}
+
+
+
+

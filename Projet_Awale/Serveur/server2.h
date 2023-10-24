@@ -31,6 +31,7 @@ typedef struct in_addr IN_ADDR;
 #define CRLF        "\r\n"
 #define PORT         1977
 #define MAX_CLIENTS     100
+#define MAX_CHALLENGES  100
 
 #define BUF_SIZE    1024
 
@@ -83,7 +84,13 @@ typedef struct {
  int find_challenge_by_player(Client player); 
  void extraireEntreEspaces(const char* chaine, char* resultat, size_t tailleResultat) ; 
 // int find_client_by_socket(int sock_client, Client* Clients , int actual ) ; 
- 
+ int sauvegardeChallenges();
+ int sauvegardeClients();
+ int sauvegardeNumChallenges();
+ int loadChallenges();
+ int loadClients();
+ int loadNumChallenges();
+ void printChallenge(const Challenge *challenge);
    
 
 #endif /* guard */
