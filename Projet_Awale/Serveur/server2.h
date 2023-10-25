@@ -31,6 +31,10 @@ typedef struct in_addr IN_ADDR;
 #define CRLF        "\r\n"
 #define PORT         1977
 #define MAX_CLIENTS     100
+#define MAX_FRIENDS     20
+#define MAX_PENDING_FRIEND_REQ     50
+#define MAX_OBSERVERS     1
+
 
 #define BUF_SIZE    1024
 
@@ -42,7 +46,7 @@ typedef struct {
     int tab[12] ; //le tableau du jeu
     int points[2] ; 
     int turn; //0->challenged_sock /1->challenger_sock
-    Client* observers[10];
+    Client* observers[MAX_OBSERVERS];
     int Client_disconnected ; 
     int nbObservers;
 } Challenge;
@@ -65,10 +69,16 @@ typedef struct {
  void remove_client(Client *clients, int to_remove, int *actual);
  void clear_clients(Client *clients, int actual);
 
- void handle_list_request (Client* sender, Client *clients, int actual); 
+ void handle_list_request (Client* sender, Client *clients, int actual);
+ void handle_friend_list(Client* sender);
+ void handle_pending_friend_list(Client* sender);
  void view_list_matches(Client* sender);
  void define_bio(Client* sender ,char*bio); 
  void view_bio(Client* sender , Client* clients ,int actual , char* buffer);
+
+ void handle_friend_request(Client* sender, Client *clients, int actual, const char *buffer);
+ void accept_friend_request(Client* sender, Client *clients, int actual, const char *buffer);
+ void decline_friend_request(Client* sender, Client *clients, int actual, const char *buffer);
 
  void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer);
  void accept_challenge_request(Client* sender , Client* Clients , int actual);
@@ -80,6 +90,10 @@ typedef struct {
  void observe_match(Client* sender, const char *buffer);
  void send_game_to_observers(int numChallenge, const char* affichage);
  void stop_observe(Client* sender);
+
+ int switch_public(Client* sender);
+ int switch_private(Client* sender);
+ int canWatch(Client* sender, int match_id);
  
  int estNombre(const char *chaine); 
  Client* extract_target_by_name(Client* clients , const char* name, int actual);

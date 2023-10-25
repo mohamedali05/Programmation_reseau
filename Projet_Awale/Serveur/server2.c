@@ -43,8 +43,12 @@ int num_challenges = 0;
    // list of all commands for the players
    Commands commandList[] = {
     {"/challenge [pseudo]", "Défier [pseudo] pour une partie"},
-    {"/accept", "Accepter un challenge en attente"},
+    {"/ready", "Accepter un challenge en attente"},
     {"/refuse", "Refuser un challenge en attente"},
+
+    {"/add_friend [pseudo]", "Envoyer une requête d'ami à [pseudo]"},
+    {"/accept [pseudo]", "Accepter la requête d'ami de [pseudo]"},
+    {"/define [pseudo]", "Refuser la requête d'ami de [pseudo]"},
 
     {"/discuss [pseudo] [text]", "Envoyer le texte [text] à [pseudo]"},
     {"/discuss1 [text]", "Envoyer le texte [text] au joueur adverse lors d'une partie"},
@@ -53,12 +57,14 @@ int num_challenges = 0;
     {"/view_bio [pseudo]", "Voir la biographie de [pseudo]"},
 
     {"/view_matches", "Voir les matchs en cours"},
-    {"/observe [id_match]", "Spectate le match [id]"},
-    {"/quit", "Arrêter de spectate un match"},
+    {"/spectate [id_match]", "Spectate le match [id]"},
+    {"/stop", "Arrêter de spectate un match"},
 
 
     {"/list_players", "Voir la liste des joueurs en ligne"},
-    {"/list_command", "Revoir la liste des commandes disponibles"},
+    {"/list_friends", "Voir la liste de ses amis disponibles"},
+    {"/list_pending", "Voir la liste des requêtes d'ami en attente"},
+    {"/list_commands", "Voir la liste des commandes disponibles"}
    };
 
    char infos_commands[1000];
@@ -185,11 +191,15 @@ int num_challenges = 0;
                else
                {
                   printf("Buffer : %s\n", buffer);
-                  if (strcmp(buffer,"/list_command") == 0 ){
+                  if (strcmp(buffer,"/list_commands") == 0 ){
                      write_client(clients[i].sock, infos_commands);
                   } else if (strcmp(buffer, "/list_players") == 0) {
                      handle_list_request(&clients[i], clients, actual);
-                  } else if ((strstr(buffer, "/define_bio") != NULL) ){
+                  } else if (strcmp(buffer, "/list_friends") == 0){
+                     handle_friend_list(&clients[i]);
+                  } else if (strcmp(buffer, "/list_pending") == 0){
+                     handle_pending_friend_list(&clients[i]);
+                  }else if ((strstr(buffer, "/define_bio") != NULL) ){
                      define_bio(&clients[i] , buffer) ; 
                   }else if(strstr(buffer, "/view_bio")!= NULL){
                      view_bio(&clients[i] ,clients , actual,   buffer) ;
@@ -197,23 +207,33 @@ int num_challenges = 0;
                      view_list_matches(&clients[i]) ; 
                   } else if ((strstr(buffer, "/challenge") != NULL)) {
                      handle_challenge_request(&clients[i], clients, actual, buffer);
-                  } else if(strcmp(buffer, "/accept") == 0 && clients[i].isChallenged) {
-                     accept_challenge_request(&clients[i], clients , actual);
+                  } else if(strcmp(buffer, "/ready") == 0 && clients[i].isChallenged) {
+                     accept_challenge_request(&clients[i], clients, actual);
                   } else if(strcmp(buffer, "/refuse") == 0 && clients[i].isChallenged) {
                      refuse_challenge_request(&clients[i]);
+                  } else if ((strstr(buffer, "/add_friend") != NULL)) {
+                     handle_friend_request(&clients[i], clients, actual, buffer);
+                  } else if((strstr(buffer, "/accept") != NULL)) {
+                     accept_friend_request(&clients[i], clients, actual, buffer);
+                  } else if((strstr(buffer, "/decline") != NULL)) {
+                     decline_friend_request(&clients[i], clients, actual, buffer);
+                  } else if((strstr(buffer, "/unfriend") != NULL)) {
+                     unfriend_friend(&clients[i], clients, actual, buffer);
                   } else if (clients[i].isPlaying && estNombre(buffer)){
                      handle_game(&clients[i], buffer) ; 
                   } else if(clients[i].isPlaying && (strstr(buffer, "/discuss1") != NULL)){
                      handle_discussion1(&clients[i], buffer) ; 
-                  }else if((strstr(buffer, "/discuss1") == NULL) && (strstr(buffer, "/discuss") != NULL)){
+                  } else if((strstr(buffer, "/discuss1") == NULL) && (strstr(buffer, "/discuss") != NULL)){
                      handle_discussion(&clients[i], buffer, clients, actual);
-                  } else if((strstr(buffer, "/observe") != NULL) && !clients[i].isObserving) {
+                  } else if((strstr(buffer, "/spectate") != NULL) && !clients[i].isObserving && !clients[i].isPlaying) {
                      observe_match(&clients[i], buffer);
-                  } else if(strcmp(buffer, "/quit") == 0 && clients[i].isObserving){
+                  } else if(strcmp(buffer, "/stop") == 0 && clients[i].isObserving){
                      stop_observe(&clients[i]);
-                     clients[i].isObserving = 0; //essayer de la faire dans stop_observe !!!
+                  } else if(strcmp(buffer, "/private") == 0){
+                     switch_private(&clients[i]);
+                  } else if(strcmp(buffer, "/public") == 0){
+                     switch_public(&clients[i]);
                   } else {
-                     printf("IS OBSERVING : %d\n", clients[i].isObserving);
                      write_client(clients[i].sock, "La commande est incorrecte");
                   }
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
@@ -345,6 +365,37 @@ void handle_list_request(Client* sender, Client *clients, int actual) {
    write_client(sender->sock, response);
 }
 
+void handle_friend_list(Client* sender) {
+   char response[BUF_SIZE];
+   response[0] = 0;
+
+   if (sender->numFriends > 0) {
+        strcat(response, "Liste de vos amis :\n");
+        for (int i = 0; i < sender->numFriends; ++i) {
+            strcat(response, sender->friends[i]->name);
+            strcat(response, "\n");
+        }
+   } else {
+        strcat(response, "Vous n'avez pas d'amis pour le moment.\n");
+   }
+   write_client(sender->sock, response); 
+}
+
+void handle_pending_friend_list(Client* sender) {
+   char response[BUF_SIZE];
+   response[0] = 0;
+   if (sender->numPendingFriends > 0) {
+        strcat(response, "Liste des joueurs qui vous ont demandé en ami :\n");
+        for (int i = 0; i < sender->numPendingFriends; ++i) {
+            strcat(response, sender->pending_friend_request[i]->name);
+            strcat(response, "\n");
+        }
+   } else {
+        strcat(response, "Vous n'avez pas de requête d'ami pour le moment.\n");
+   }
+   write_client(sender->sock, response); 
+}
+
 void define_bio(Client* sender ,char*buffer){
    char* bio_start = buffer + strlen("/define_bio ") ;
    strcpy(sender->bio, bio_start) ; 
@@ -367,7 +418,7 @@ void view_list_matches(Client* sender){
       if (challenges[i].state == 1) {
          foundMatch = 1;
          char temp[BUF_SIZE] ; 
-         snprintf(temp, BUF_SIZE, "%d : %s vs %s", i + 1, challenges[i].challenged->name, challenges[i].challenger->name);
+         snprintf(temp, BUF_SIZE, "%d : %s vs %s \n", i + 1, challenges[i].challenged->name, challenges[i].challenger->name);
          strncat(affichage, temp, BUF_SIZE - strlen(affichage) - 1);
       }
    }
@@ -386,15 +437,15 @@ void handle_challenge_request(Client* sender, Client *clients, int actual, const
       return ; 
    }
    if (target->isPlaying){
-      write_client(sender->sock ,"Ce joueur est déjà en train de jouer ") ; 
+      write_client(sender->sock ,"Ce joueur est déjà en train de jouer") ; 
       return ; 
    }
    if(target == sender){
-      write_client(sender->sock ,"Vous ne pouvez pas vous challenger vous mêmes ") ;
+      write_client(sender->sock ,"Vous ne pouvez pas vous challenger vous même") ;
       return ; 
    }
    if(target->isChallenged){
-      write_client(sender->sock ,"Cette personne a déjà été challengé ; attendez qu'elle réponde d'abord à ce challenge ") ;
+      write_client(sender->sock ,"Cette personne a déjà été challengée ; attendez qu'elle réponde d'abord à ce challenge") ;
       return ; 
    }
 
@@ -408,7 +459,7 @@ void handle_challenge_request(Client* sender, Client *clients, int actual, const
    // Envoyez l'invitation au client ciblé.
    char invitation[BUF_SIZE];
    strcpy(invitation , sender->name) ; 
-   strcat(invitation , " vous a défié.\n/accept ou /refuse pour répondre.") ; 
+   strcat(invitation , " vous a défié.\n/ready ou /refuse pour répondre.") ; 
    write_client(challenges[num_challenges].challenged->sock, invitation);
    write_client(challenges[num_challenges].challenger->sock , "Challenge envoyé") ; 
    // Incrémente le compteur des invitations.
@@ -473,6 +524,164 @@ void refuse_challenge_request(Client* sender){
    sender->isChallenged = 0 ; 
 }
 
+void handle_friend_request(Client* sender, Client *clients, int actual, const char *buffer){
+   
+   Client *target = extract_target_by_name(clients, buffer +strlen("/add_friend") +1 , actual);
+   if (target == NULL){
+      write_client(sender->sock ,"Ce joueur n'existe pas") ; 
+      return ; 
+   }
+   if (isFriend(sender,target)){
+      write_client(sender->sock ,"Ce joueur est déjà votre ami") ; 
+      return ; 
+   }
+   if (isPending(sender,target)){
+      write_client(sender->sock ,"Cette personne vous a déjà envoyé une requête d'ami") ; 
+      return ; 
+   }
+   if (isPending(target,sender)){
+      write_client(sender->sock ,"Vous avez dejà envoyé une requête d'ami à cette personne") ; 
+      return ; 
+   }
+   if(target == sender){
+      write_client(sender->sock ,"Vous ne pouvez pas envoyer de requête d'ami à vous même") ;
+      return ; 
+   }
+
+   if (target->numPendingFriends < MAX_PENDING_FRIEND_REQ) {
+      target->pending_friend_request[target->numPendingFriends] = sender;
+      target->numPendingFriends++;
+
+      // Envoyez l'invitation au client ciblé.
+      char invitation[BUF_SIZE];
+      strcpy(invitation , sender->name) ;
+      strcat(invitation , " vous a ajouté en ami.\n/accept [pseudo] ou /decline [pseudo] pour répondre.") ; 
+      write_client(target->sock, invitation);
+      write_client(sender->sock , "Requête d'ami envoyée") ; 
+    } else {
+      write_client(sender->sock, "La liste des requêtes d'ami de ce joueur est pleine. Réessayez plus tard.");
+    }
+
+}
+
+int isFriend(Client* sender, Client* target) {
+    for (int i = 0; i < sender->numFriends; ++i) {
+        if (sender->friends[i] == target) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int isPending(Client* sender, Client* target) {
+    for (int i = 0; i < sender->numPendingFriends; ++i) {
+        if (sender->pending_friend_request[i] == target) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void accept_friend_request(Client* sender, Client *clients, int actual, const char *buffer){
+   Client *target = extract_target_by_name(clients, buffer +strlen("/accept") +1 , actual);
+   int foundRequest = 0;
+   char message[BUF_SIZE];
+
+   for (int i = 0; i < sender->numPendingFriends; ++i) {
+      if (sender->pending_friend_request[i] == target) {
+            if (sender->numFriends < MAX_FRIENDS && target->numFriends < MAX_FRIENDS) {
+               sender->friends[sender->numFriends] = target;
+               sender->numFriends++;
+
+               target->friends[target->numFriends] = sender;
+               target->numFriends++;
+
+               strcpy(message, sender->name) ; 
+               strcat(message, " a accepté votre requête d'ami.\n");
+               write_client(target->sock, message);
+
+               snprintf(message, BUF_SIZE, "Vous êtes maintenant ami avec %s.", target->name);
+               write_client(sender->sock, message);
+
+               for (int j = i; j < sender->numPendingFriends - 1; ++j) {
+               sender->pending_friend_request[j] = sender->pending_friend_request[j + 1];
+               }
+               sender->numPendingFriends--;
+
+            } else if(sender->numFriends >= MAX_FRIENDS){
+               write_client(sender->sock, "Votre liste d'ami est pleine");
+            } else if(target->numFriends >= MAX_FRIENDS){
+               snprintf(message, BUF_SIZE, "La liste d'ami de %s est pleine.", target->name);
+               write_client(sender->sock, message);
+            }
+
+            foundRequest = 1;
+      }
+   }
+   if (!foundRequest) {
+      write_client(sender->sock, "Ce joueur ne vous a pas envoyé de requête d'ami.");
+   }
+}
+
+void decline_friend_request(Client* sender, Client *clients, int actual, const char *buffer){
+   Client *target = extract_target_by_name(clients, buffer +strlen("/decline") +1 , actual);
+   int foundRequest = 0;
+   char message[BUF_SIZE];
+
+   for (int i = 0; i < sender->numPendingFriends; ++i) {
+      if (sender->pending_friend_request[i] == target) {
+         for (int j = i; j < sender->numPendingFriends - 1; ++j) {
+            sender->pending_friend_request[j] = sender->pending_friend_request[j + 1];
+         }
+         sender->numPendingFriends--;
+
+         strcpy(message, sender->name) ; 
+         strcat(message, " a refusé votre requête d'ami.\n") ; 
+         write_client(target->sock, message);
+
+         foundRequest = 1;
+      }
+   }
+   
+   if (!foundRequest) {
+      write_client(sender->sock, "Ce joueur ne vous a pas envoyé de requête d'ami.");
+   }
+}
+
+void unfriend_friend(Client* sender, Client *clients, int actual, const char *buffer){
+   Client *target = extract_target_by_name(clients, buffer +strlen("/unfriend") +1 , actual);
+   char message[BUF_SIZE];
+
+   if (isFriend(sender,target)) {
+      for (int i = 0; i < sender->numFriends; ++i) {
+         if (sender->friends[i] == target) {
+            for (int j = i; j < sender->numFriends - 1; ++j) {
+               sender->friends[j] = sender->friends[j + 1];
+            }
+            sender->numFriends--;
+         }
+      }
+      for (int i = 0; i < target->numFriends; ++i) {
+         if (target->friends[i] == sender) {
+            for (int j = i; j < target->numFriends - 1; ++j) {
+               target->friends[j] = target->friends[j + 1];
+            }
+            target->numFriends--;
+         }
+      }
+
+      snprintf(message, BUF_SIZE, "%s a été retiré de vos amis.", target->name);
+      write_client(sender->sock, message);
+
+      snprintf(message, BUF_SIZE, "%s vous a retiré de ses amis.", sender->name);
+      write_client(target->sock, message);
+   } else {
+      snprintf(message, BUF_SIZE, "%s ne fait pas partie de vos amis.", target->name);
+      write_client(sender->sock, message);
+   }
+
+}
+
 int find_challenge_by_challenged_client(Client challenged){ //return the index of the pending challenge of challenged player
    for (int i = 0; i < num_challenges ; i++) {
       if (challenges[i].challenged->sock == challenged.sock  && challenges[i].state == -1) {
@@ -483,6 +692,7 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
 
  void handle_game(Client* sender, char* buffer){
    char affichage[BUF_SIZE];
+   char fin[BUF_SIZE];
    int numChallenge = find_challenge_by_player(*sender) ;
    int coup  = atoi(buffer) ;
    int socket_challenger  = challenges[numChallenge].challenger->sock; 
@@ -502,21 +712,27 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                write_client(socket_challenged,"A votre tour\n" ) ;
             }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 1){
                write_client(socket_challenged,"Bravo vous avez gagné ;)\n" ) ;
-               write_client(socket_challenger,"vous avez perdu :(\n" ) ;
+               write_client(socket_challenger,"vous avez perdu :(\n" );
+               snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenged->name);
+               send_game_to_observers(numChallenge, fin);
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
                for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+                  challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
                challenges[numChallenge].nbObservers = 0;
             }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
-               write_client(socket_challenger,"Bravo vous avez gagné ;)\n" ) ;
-               write_client(socket_challenged,"vous avez perdu :(\n" ) ;
+               write_client(socket_challenger,"Bravo vous avez gagné ;)\n" );
+               write_client(socket_challenged,"Vous avez perdu :(\n" );
+               snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenger->name);
+               send_game_to_observers(numChallenge, fin);
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
                for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+                  challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
                challenges[numChallenge].nbObservers = 0;
@@ -541,22 +757,28 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                write_client(socket_challenged,"Au tour de votre adversaire\n" ) ;
                write_client(socket_challenger,"A votre tour\n" ) ;
             }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 1){
-               write_client(socket_challenged,"Bravo, vous avez gagné ;)\n" ) ;
-               write_client(socket_challenger,"Vous avez perdu :(\n" ) ;
+               write_client(socket_challenged,"Bravo, vous avez gagné ;)\n" );
+               write_client(socket_challenger,"Vous avez perdu :(\n" );
+               snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenged->name);
+               send_game_to_observers(numChallenge, fin);
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
                for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+                  challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
                challenges[numChallenge].nbObservers = 0;
             }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
-               write_client(socket_challenger,"Bravo, vous avez gagné ;)\n" ) ;
-               write_client(socket_challenged,"Vous avez perdu :(\n" ) ;
+               write_client(socket_challenger,"Bravo, vous avez gagné ;)\n" );
+               write_client(socket_challenged,"Vous avez perdu :(\n" );
+               snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenger->name);
+               send_game_to_observers(numChallenge, fin);
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
                for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+                  challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
                challenges[numChallenge].nbObservers = 0;
@@ -664,24 +886,38 @@ void extraireEntreEspaces(const char* chaine, char* resultat, size_t tailleResul
  
 void observe_match(Client* sender, const char *buffer) {
    char affichage[BUF_SIZE];
-   char* match = buffer + strlen("/observe ");
+   char* match = buffer + strlen("/spectate ");
    int match_id = atoi(match) - 1;
-
-   sender->isObserving = 1;
 
    // Vérifier si le match_id est valide
    if (match_id >= 0 && match_id < num_challenges) {
-      if (challenges[match_id].nbObservers < 10) {
-         challenges[match_id].observers[challenges[match_id].nbObservers] = sender;
-         challenges[match_id].nbObservers++; 
-         printTableToChar(challenges[match_id].tab, challenges[match_id].points ,challenges[match_id].challenged->name, challenges[match_id].challenger->name, affichage) ;
-         write_client(sender->sock, affichage);
+      if (challenges[match_id].nbObservers < MAX_OBSERVERS) {
+         if (canWatch(sender, match_id)) {
+            challenges[match_id].observers[challenges[match_id].nbObservers] = sender;
+            challenges[match_id].nbObservers++;
+            sender->isObserving = 1; 
+            printTableToChar(challenges[match_id].tab, challenges[match_id].points ,challenges[match_id].challenged->name, challenges[match_id].challenger->name, affichage) ;
+            write_client(sender->sock, affichage);
+         } else {
+            write_client(sender->sock ,"Cette partie est privée"); 
+         }
       } else {
          write_client(sender->sock ,"Il y a dejà trop d'observateurs pour ce match"); 
       }
    } else {
       write_client(sender->sock ,"Le match n'a pas été trouvé"); 
    }
+}
+
+int canWatch(Client* sender, int match_id) {
+   Client* challenged = challenges[match_id].challenged;
+   Client* challenger = challenges[match_id].challenger;
+   return(
+      (!challenged->private && !challenger->private) ||
+      ( challenged->private && !challenger->private && isFriend(sender, challenged)) ||
+      (!challenged->private &&  challenger->private && isFriend(sender, challenger)) ||
+      ( challenged->private &&  challenger->private && isFriend(sender, challenged) && isFriend(sender, challenger))
+   );
 }
 
 void send_game_to_observers(int numChallenge, const char* affichage) {
@@ -700,11 +936,29 @@ void stop_observe(Client* sender) {
                     challenges[i].observers[k] = challenges[i].observers[k + 1];
                 }
                 challenges[i].nbObservers--;
+                sender->isObserving = 0;
                 return;
             }
         }
     }
-    //sender->isObserving = 0;
+}
+
+int switch_private(Client* sender) {
+   if (sender->private == 1) {
+      write_client(sender->sock ,"Le mode privé est déjà activé"); 
+   } else {
+      sender->private = 1;
+      write_client(sender->sock ,"Le mode privé a été activé"); 
+   }
+}
+
+int switch_public(Client* sender) {
+   if (sender->private == 0) {
+      write_client(sender->sock ,"Le mode public est déjà activé"); 
+   } else {
+      sender->private = 0;
+      write_client(sender->sock ,"Le mode public a été activé"); 
+   }
 }
 
 int find_challenge_By_player_for_disconnection(Client player){
