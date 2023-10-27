@@ -61,6 +61,8 @@ int total_challenges = 0;
     {"/spectate [id_match]", "Spectate le match [id]"},
     {"/stop", "Arrêter de spectate un match"},
 
+    {"/public", "Passer en mode public"},
+    {"/private", "Passer en mode privé"},
 
     {"/list_players", "Voir la liste des joueurs en ligne"},
     {"/list_friends", "Voir la liste de ses amis disponibles"},
@@ -190,7 +192,6 @@ int total_challenges = 0;
                }
                else
                {
-                  printf("Buffer : %s\n", buffer);
                   if (strcmp(buffer,"/list_commands") == 0 ){
                      write_client(clients[i].sock, infos_commands);
                   } else if (strcmp(buffer, "/list_players") == 0) {
@@ -347,6 +348,7 @@ void write_client(SOCKET sock, const char *buffer)
    }
 }
 
+/*Permet d'afficher la liste des joueurs*/
 void handle_list_request(Client* sender, Client *clients, int actual) {
     char response[BUF_SIZE];
     response[0] = 0;
@@ -364,6 +366,7 @@ void handle_list_request(Client* sender, Client *clients, int actual) {
    write_client(sender->sock, response);
 }
 
+/*Permet d'afficher la liste des amis du joueur*/
 void handle_friend_list(Client* sender) {
    char response[BUF_SIZE];
    response[0] = 0;
@@ -380,6 +383,7 @@ void handle_friend_list(Client* sender) {
    write_client(sender->sock, response); 
 }
 
+/*Permet d'afficher la liste des requêtes d'ami en attente du joueur*/
 void handle_pending_friend_list(Client* sender) {
    char response[BUF_SIZE];
    response[0] = 0;
@@ -395,12 +399,14 @@ void handle_pending_friend_list(Client* sender) {
    write_client(sender->sock, response); 
 }
 
+/*Permet de définir la biographie d'un joueur*/
 void define_bio(Client* sender ,char*buffer){
    char* bio_start = buffer + strlen("/define_bio ") ;
    strcpy(sender->bio, bio_start) ; 
    write_client(sender->sock ,"Votre bio a bien été enregistré") ; 
 }
 
+/*Permet d'afficher la biographie d'un joueur*/
 void view_bio(Client* sender , Client* clients ,int actual , char* buffer){
    Client *target = extract_target_by_name(clients, buffer+strlen("/view_bio") +1, actual);
    if (target == NULL){
@@ -410,6 +416,7 @@ void view_bio(Client* sender , Client* clients ,int actual , char* buffer){
    write_client(sender->sock,target->bio) ; 
 }
 
+/*Permet d'afficher la liste des matchs en cours*/
 void view_list_matches(Client* sender){
    char affichage[BUF_SIZE] = "";
    int foundMatch = 0;
@@ -428,8 +435,8 @@ void view_list_matches(Client* sender){
    }
 }
 
+/*Permet de gérer les demandes de challenge*/
 void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer){
-   
    Client *target = extract_target_by_name(clients, buffer +strlen("/challenge") +1 , actual);
    if (target == NULL){
       write_client(sender->sock ,"Ce joueur n'existe pas") ; 
@@ -448,34 +455,32 @@ void handle_challenge_request(Client* sender, Client *clients, int actual, const
       return ; 
    }
 
-   // Créez une nouvelle invitation.
    challenges[total_challenges].challenger = sender ; 
    challenges[total_challenges].challenged = target ;    
    challenges[total_challenges].state = -1;  // -1 indique en attente d'une réponse.
    challenges[total_challenges].nbObservers = 0;
    target->isChallenged = 1;
 
-   // Envoyez l'invitation au client ciblé.
    char invitation[BUF_SIZE];
    strcpy(invitation , sender->name) ; 
    strcat(invitation , " vous a défié.\n/ready ou /refuse pour répondre.") ; 
    write_client(challenges[total_challenges].challenged->sock, invitation);
    write_client(challenges[total_challenges].challenger->sock , "Challenge envoyé") ; 
-   // Incrémente le compteur des invitations.
    total_challenges++;
 }
 
-Client* extract_target_by_name(Client* clients , const char* buffer, int actual){ //Get the client with its pseudo
+/*Permet d'obtenir un client par son nom*/
+Client* extract_target_by_name(Client* clients , const char* buffer, int actual){
    for (int i = 0; i < actual; i++) {
          char *name = clients[i].name;
-        // Check if the name is present in the buffer
         if (strcmp(buffer, name) == 0) {
-            return &(clients[i]); // Name found in the sentence
+            return &(clients[i]);
         }
     }
-    return NULL; // No name found in the sentence
+    return NULL;
 }
 
+/*Permet de gérer l'acceptation d'un challenge*/
 void accept_challenge_request(Client* sender , Client* Clients ,   int actual){
    char affichage[BUF_SIZE];
    int numChallenge = find_challenge_by_challenged_client(*sender) ; 
@@ -489,7 +494,6 @@ void accept_challenge_request(Client* sender , Client* Clients ,   int actual){
    
    reset(challenges[numChallenge].tab, challenges[numChallenge].points, 4) ;
    challenges[total_challenges].turn = rand()%2 ; 
-   printf("%d \n", challenges[total_challenges].turn) ; 
    sender->isChallenged  = 0 ; 
    
    challenges[numChallenge].challenged->isPlaying = 1 ;
@@ -498,8 +502,8 @@ void accept_challenge_request(Client* sender , Client* Clients ,   int actual){
 
    write_client(socket_challenger, invitation);
    print_table_to_char(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name, affichage) ;
-   write_client(socket_challenger, affichage) ; 
-   write_client(socket_challenged, affichage) ;
+   write_client(socket_challenger, affichage); 
+   write_client(socket_challenged, affichage);
    
    
   if (challenges[total_challenges].turn == 0 ){ 
@@ -512,6 +516,7 @@ void accept_challenge_request(Client* sender , Client* Clients ,   int actual){
   }
 }
 
+/*Permet de gérer le refus d'un challenge*/
 void refuse_challenge_request(Client* sender){
    int numChallenge = find_challenge_by_challenged_client(*sender) ;
    char invitation[BUF_SIZE];
@@ -523,6 +528,7 @@ void refuse_challenge_request(Client* sender){
    sender->isChallenged = 0 ; 
 }
 
+/*Permet de gérer les demandes d'ami*/
 void handle_friend_request(Client* sender, Client *clients, int actual, const char *buffer){
    
    Client *target = extract_target_by_name(clients, buffer +strlen("/add_friend") +1 , actual);
@@ -548,10 +554,9 @@ void handle_friend_request(Client* sender, Client *clients, int actual, const ch
    }
 
    if (target->numPendingFriends < MAX_PENDING_FRIEND_REQ) {
-      target->pending_friend_request[target->numPendingFriends] = sender;
+      target->pending_friend_request[target->numPendingFriends] = sender; //ajouter la requête au tableau des requêtes d'ami en attente
       target->numPendingFriends++;
 
-      // Envoyez l'invitation au client ciblé.
       char invitation[BUF_SIZE];
       strcpy(invitation , sender->name) ;
       strcat(invitation , " vous a ajouté en ami.\n/accept [pseudo] ou /decline [pseudo] pour répondre.") ; 
@@ -563,6 +568,7 @@ void handle_friend_request(Client* sender, Client *clients, int actual, const ch
 
 }
 
+/*Permet de vérifier si deux Clients sont amis*/
 int isFriend(Client* sender, Client* target) {
     for (int i = 0; i < sender->numFriends; ++i) {
         if (sender->friends[i] == target) {
@@ -572,6 +578,7 @@ int isFriend(Client* sender, Client* target) {
     return 0;
 }
 
+/*Permet de vérifier si un Client a envoyé une requête d'ami en attente à un autre Client*/
 int isPending(Client* sender, Client* target) {
     for (int i = 0; i < sender->numPendingFriends; ++i) {
         if (sender->pending_friend_request[i] == target) {
@@ -581,6 +588,7 @@ int isPending(Client* sender, Client* target) {
     return 0;
 }
 
+/*Permet de gérer l'acceptation d'une requête d'ami*/
 void accept_friend_request(Client* sender, Client *clients, int actual, const char *buffer){
    Client *target = extract_target_by_name(clients, buffer +strlen("/accept") +1 , actual);
    int foundRequest = 0;
@@ -589,10 +597,10 @@ void accept_friend_request(Client* sender, Client *clients, int actual, const ch
    for (int i = 0; i < sender->numPendingFriends; ++i) {
       if (sender->pending_friend_request[i] == target) {
             if (sender->numFriends < MAX_FRIENDS && target->numFriends < MAX_FRIENDS) {
-               sender->friends[sender->numFriends] = target;
+               sender->friends[sender->numFriends] = target; //ajouter le nouvel ami au tableau d'ami
                sender->numFriends++;
 
-               target->friends[target->numFriends] = sender;
+               target->friends[target->numFriends] = sender; //ajouter le nouvel ami au tableau d'ami
                target->numFriends++;
 
                strcpy(message, sender->name) ; 
@@ -603,7 +611,7 @@ void accept_friend_request(Client* sender, Client *clients, int actual, const ch
                write_client(sender->sock, message);
 
                for (int j = i; j < sender->numPendingFriends - 1; ++j) {
-               sender->pending_friend_request[j] = sender->pending_friend_request[j + 1];
+               sender->pending_friend_request[j] = sender->pending_friend_request[j + 1]; //enlever la requête du tableau des requêtes en cours
                }
                sender->numPendingFriends--;
 
@@ -622,6 +630,7 @@ void accept_friend_request(Client* sender, Client *clients, int actual, const ch
    }
 }
 
+/*Permet de gérer le refus d'une requête d'ami*/
 void decline_friend_request(Client* sender, Client *clients, int actual, const char *buffer){
    Client *target = extract_target_by_name(clients, buffer +strlen("/decline") +1 , actual);
    int foundRequest = 0;
@@ -630,7 +639,7 @@ void decline_friend_request(Client* sender, Client *clients, int actual, const c
    for (int i = 0; i < sender->numPendingFriends; ++i) {
       if (sender->pending_friend_request[i] == target) {
          for (int j = i; j < sender->numPendingFriends - 1; ++j) {
-            sender->pending_friend_request[j] = sender->pending_friend_request[j + 1];
+            sender->pending_friend_request[j] = sender->pending_friend_request[j + 1]; //enlever la requête du tableau des requêtes en cours
          }
          sender->numPendingFriends--;
 
@@ -647,6 +656,7 @@ void decline_friend_request(Client* sender, Client *clients, int actual, const c
    }
 }
 
+/*Permet de gérer la suppression d'un ami*/
 void unfriend_friend(Client* sender, Client *clients, int actual, const char *buffer){
    Client *target = extract_target_by_name(clients, buffer +strlen("/unfriend") +1 , actual);
    char message[BUF_SIZE];
@@ -655,7 +665,7 @@ void unfriend_friend(Client* sender, Client *clients, int actual, const char *bu
       for (int i = 0; i < sender->numFriends; ++i) {
          if (sender->friends[i] == target) {
             for (int j = i; j < sender->numFriends - 1; ++j) {
-               sender->friends[j] = sender->friends[j + 1];
+               sender->friends[j] = sender->friends[j + 1]; //enlever l'ami du tableau des amis
             }
             sender->numFriends--;
          }
@@ -663,7 +673,7 @@ void unfriend_friend(Client* sender, Client *clients, int actual, const char *bu
       for (int i = 0; i < target->numFriends; ++i) {
          if (target->friends[i] == sender) {
             for (int j = i; j < target->numFriends - 1; ++j) {
-               target->friends[j] = target->friends[j + 1];
+               target->friends[j] = target->friends[j + 1]; //enlever l'ami du tableau des amis
             }
             target->numFriends--;
          }
@@ -681,7 +691,8 @@ void unfriend_friend(Client* sender, Client *clients, int actual, const char *bu
 
 }
 
-int find_challenge_by_challenged_client(Client challenged){ //return the index of the pending challenge of challenged player
+/*Permet de trouver le challenge en cours d'un joueur challengé*/
+int find_challenge_by_challenged_client(Client challenged){
    for (int i = 0; i < total_challenges ; i++) {
       if (challenges[i].challenged->sock == challenged.sock  && challenges[i].state == -1) {
          return i;
@@ -689,7 +700,8 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
    }
 }
 
- void handle_game(Client* sender, char* buffer){
+/*Permet de gérer le déroulé d'un jeu*/
+void handle_game(Client* sender, char* buffer){
    char affichage[BUF_SIZE];
    char fin[BUF_SIZE];
    int numChallenge = find_challenge_by_player(*sender) ;
@@ -698,13 +710,12 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
    int socket_challenged = challenges[numChallenge].challenged->sock;
    if(socket_challenger == sender->sock){
       if(challenges[numChallenge].turn) {
-         //the challenger sended the request and it's his turn
          if (move_allowed(challenges[numChallenge].tab, &coup, challenges[numChallenge].turn )){
             turn(challenges[numChallenge].tab, challenges[numChallenge].points,  challenges[numChallenge].turn, coup ) ; 
             print_table_to_char(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name , affichage) ;
             write_client(socket_challenger, affichage) ; 
             write_client(socket_challenged, affichage) ;
-            send_game_to_observers(numChallenge, affichage);
+            send_game_to_observers(numChallenge, affichage); //envoyer le jeu aux observers
             challenges[numChallenge].turn = 0 ;
             if(!is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points )){
                write_client(socket_challenger,"Au tour de votre adversaire\n" ) ;
@@ -713,11 +724,11 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                write_client(socket_challenged,"Bravo vous avez gagné ;)\n" ) ;
                write_client(socket_challenger,"vous avez perdu :(\n" );
                snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenged->name);
-               send_game_to_observers(numChallenge, fin);
+               send_game_to_observers(numChallenge, fin); //envoyer le jeu aux observers
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
+               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) { //reinitialiser les observateurs
                   challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
@@ -737,7 +748,7 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
+               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) { //reinitialiser les observateurs
                   challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
@@ -771,11 +782,11 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                write_client(socket_challenged,"Bravo, vous avez gagné ;)\n" );
                write_client(socket_challenger,"Vous avez perdu :(\n" );
                snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenged->name);
-               send_game_to_observers(numChallenge, fin);
+               send_game_to_observers(numChallenge, fin); //envoyer le jeu aux observers
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
+               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) { //reinitialiser les observateurs
                   challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
@@ -791,11 +802,11 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                write_client(socket_challenger,"Bravo, vous avez gagné ;)\n" );
                write_client(socket_challenged,"Vous avez perdu :(\n" );
                snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenger->name);
-               send_game_to_observers(numChallenge, fin);
+               send_game_to_observers(numChallenge, fin); //envoyer le jeu aux observers
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
+               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) { //reinitialiser les observateurs
                   challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
@@ -816,6 +827,7 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
    }
 }
 
+/*Permet de trouver le challenge en cours associé à un joueur*/
 int find_challenge_by_player(Client player){
    for (int i = 0; i < total_challenges ; i++) {
       if ((challenges[i].challenged->sock == player.sock || challenges[i].challenger->sock == player.sock)&& challenges[i].state ==1 
@@ -825,14 +837,12 @@ int find_challenge_by_player(Client player){
    }
 }
 
+/*Permet de vérifier qu'une chaine de caractère est un nombre*/
 int est_nombre(const char *chaine) {
-    // Vérifier si la chaîne est vide ou nulle
     if (chaine == NULL || chaine[0] == '\0') {
         return 0;
     }
-    // Indice pour parcourir la chaîne
     int i = 0;
-    // Parcourir le reste de la chaîne
     while (chaine[i] != '\0') {
         if (chaine[i] < '0' || chaine[i] > '9') {
             return 0; // Si un caractère n'est pas un chiffre, la chaîne n'est pas un nombre
@@ -843,7 +853,8 @@ int est_nombre(const char *chaine) {
     return 1;
 }
 
- void handle_discussion1(Client* sender  , char* buffer){
+/*Permet de gérer la discussion entre deux joueurs en partie*/
+void handle_discussion1(Client* sender  , char* buffer){
    char affichage[BUF_SIZE] ;  
    int numChallenge = find_challenge_by_player(*sender) ;
    strcpy(affichage , sender->name) ; 
@@ -859,7 +870,8 @@ int est_nombre(const char *chaine) {
    }
 }
 
- void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual ){
+/*Permet de gérer la discussion entre deux joueurs hors partie*/
+void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual ){
    char affichage[BUF_SIZE] ;
    char name[BUF_SIZE] ; 
    extraire_entre_espaces(buffer , name , sizeof(name)) ; 
@@ -875,48 +887,37 @@ int est_nombre(const char *chaine) {
    write_client(target->sock,affichage ) ; 
 }
 
+/*Permet de d'extraire la chaine de caractère se trouvant entre deux espaces*/
 void extraire_entre_espaces(const char* chaine, char* resultat, size_t tailleResultat) {
-    // Recherche du premier espace dans la chaîne
-    const char* premierEspace = strchr(chaine, ' ');
-
-    if (premierEspace == NULL) {
-        // Si le premier espace n'est pas trouvé, on renvoie une chaîne vide
-        resultat[0] = '\0';
-        return;
-    }
-
-    // Recherche du deuxième espace à partir du premier espace trouvé
-    const char* deuxiemeEspace = strchr(premierEspace + 1, ' ');
-
-    if (deuxiemeEspace == NULL) {
-        // Si le deuxième espace n'est pas trouvé, on renvoie une chaîne vide
-        resultat[0] = '\0';
-        return;
-    }
-
-    // Calcul de la longueur de la sous-chaîne à extraire
-    size_t longueur = deuxiemeEspace - (premierEspace + 1);
-
-    if (longueur < tailleResultat) {
-        // Copie de la sous-chaîne dans le résultat
-        strncpy(resultat, premierEspace + 1, longueur);
-        resultat[longueur] = '\0';
-    } else {
-        // Si la taille du résultat est insuffisante, on tronque la sous-chaîne
-        strncpy(resultat, premierEspace + 1, tailleResultat - 1);
-        resultat[tailleResultat - 1] = '\0';
-    }
+   const char* premierEspace = strchr(chaine, ' ');
+   if (premierEspace == NULL) {
+      resultat[0] = '\0';
+      return;
+   }
+   const char* deuxiemeEspace = strchr(premierEspace + 1, ' ');
+   if (deuxiemeEspace == NULL) {
+      resultat[0] = '\0';
+      return;
+   }
+   size_t longueur = deuxiemeEspace - (premierEspace + 1);
+   if (longueur < tailleResultat) {
+      strncpy(resultat, premierEspace + 1, longueur);
+      resultat[longueur] = '\0';
+   } else {
+      strncpy(resultat, premierEspace + 1, tailleResultat - 1);
+      resultat[tailleResultat - 1] = '\0';
+   }
 }
- 
+
+/*Permet de gérer l'observation d'un match*/
 void observe_match(Client* sender, const char *buffer) {
    char affichage[BUF_SIZE];
    char* match = buffer + strlen("/spectate ");
    int match_id = atoi(match) - 1;
 
-   // Vérifier si le match_id est valide
    if (match_id >= 0 && match_id < total_challenges) {
       if (challenges[match_id].nbObservers < MAX_OBSERVERS) {
-         if (can_watch(sender, match_id)) {
+         if (can_watch(sender, match_id)) { //si le client peut observer le match
             challenges[match_id].observers[challenges[match_id].nbObservers] = sender;
             challenges[match_id].nbObservers++;
             sender->isObserving = 1; 
@@ -933,6 +934,7 @@ void observe_match(Client* sender, const char *buffer) {
    }
 }
 
+/*Permet de vérifier qu'un joueur peut bien observer un match*/
 int can_watch(Client* sender, int match_id) {
    Client* challenged = challenges[match_id].challenged;
    Client* challenger = challenges[match_id].challenger;
@@ -944,20 +946,20 @@ int can_watch(Client* sender, int match_id) {
    );
 }
 
+/*Permet d'envoyer le tableau de jeu aux observeurs de ce jeu*/
 void send_game_to_observers(int numChallenge, const char* affichage) {
    for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
       write_client(challenges[numChallenge].observers[i]->sock, affichage);
    }
 }
 
+/*Permet de gérer l'arrêt de l'observation d'un match*/
 void stop_observe(Client* sender) {
     for (int i = 0; i < total_challenges; i++) {
         for (int j = 0; j < challenges[i].nbObservers; j++) {
-            // Si le client est trouvé dans les observateurs du challenge
             if (challenges[i].observers[j] == sender) {
-                // Retirer le client en décalant les observateurs restants
                 for (int k = j; k < challenges[i].nbObservers - 1; k++) {
-                    challenges[i].observers[k] = challenges[i].observers[k + 1];
+                    challenges[i].observers[k] = challenges[i].observers[k + 1]; // Retirer le clients du tableau des observateurs
                 }
                 challenges[i].nbObservers--;
                 sender->isObserving = 0;
@@ -967,6 +969,7 @@ void stop_observe(Client* sender) {
     }
 }
 
+/*Permet de gérer le passage en mode privé*/
 int switch_private(Client* sender) {
    if (sender->private == 1) {
       write_client(sender->sock ,"Le mode privé est déjà activé"); 
@@ -976,6 +979,7 @@ int switch_private(Client* sender) {
    }
 }
 
+/*Permet de gérer le passage en mode public*/
 int switch_public(Client* sender) {
    if (sender->private == 0) {
       write_client(sender->sock ,"Le mode public est déjà activé"); 
@@ -985,6 +989,7 @@ int switch_public(Client* sender) {
    }
 }
 
+/*Permet de trouver le challenge en cours associé à un joueur pour la deconnexion*/
 int find_challenge_By_player_for_disconnection(Client player){
    for (int i = 0; i < total_challenges ; i++) {
       if ((challenges[i].challenged->sock == player.sock || challenges[i].challenger->sock == player.sock)&& (challenges[i].state ==1 
@@ -995,7 +1000,7 @@ int find_challenge_By_player_for_disconnection(Client player){
    return (- 1)  ; 
 }
 
-
+/*Permet d'afficher un ASCII art du titre du jeu*/
 int print_logo() {
    printf("\n");
    printf("   _____                 .__          \n");
@@ -1007,6 +1012,7 @@ int print_logo() {
    return 0;
 }
 
+/*Permet de convertir l'ASCII art du titre du jeu en char**/
 char* print_logo_to_char() {
     char buffer[1000]; 
 
@@ -1019,8 +1025,8 @@ char* print_logo_to_char() {
         "\\____|__  /\\/\\_/  (____  /____/\\___  >\n"
         "        \\/             \\/          \\/ \n");
 
-    char* result = malloc(strlen(buffer) + 1); // Allouer de la mémoire pour la chaîne résultante
-    strcpy(result, buffer); // Copier le contenu du tampon dans la chaîne résultante
+    char* result = malloc(strlen(buffer) + 1);
+    strcpy(result, buffer);
 
     return result;
 }

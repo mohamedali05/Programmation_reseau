@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "client2.h"
-#include "awale_client.h"
 
 static void init(void)
 {
@@ -149,6 +148,18 @@ static void write_server(SOCKET sock, const char *buffer)
    }
 }
 
+/*Permet d'afficher un ASCII art du titre du jeu*/
+int print_logo() {
+   printf("\n");
+   printf("   _____                 .__          \n");
+   printf("  /  _  \\__  _  _______  |  |   ____  \n");
+   printf(" /  /_\\  \\ \\/ \\/ /\\__  \\ |  | _/ __ \\ \n");
+   printf("/    |    \\     /  / __ \\|  |_\\  ___/ \n");
+   printf("\\____|__  /\\/\\_/  (____  /____/\\___  >\n");
+   printf("        \\/             \\/          \\/ \n");
+   return 0;
+}
+
 int main(int argc, char **argv)
 {
    if(argc < 2)
@@ -159,13 +170,7 @@ int main(int argc, char **argv)
 
    init();
 
-   printf("\n");
-   printf("   _____                 .__          \n");
-   printf("  /  _  \\__  _  _______  |  |   ____  \n");
-   printf(" /  /_\\  \\ \\/ \\/ /\\__  \\ |  | _/ __ \\ \n");
-   printf("/    |    \\     /  / __ \\|  |_\\  ___/ \n");
-   printf("\\____|__  /\\/\\_/  (____  /____/\\___  >\n");
-   printf("        \\/             \\/          \\/ \n");
+   print_logo();
 
    printf("Press Enter to Play");
    getchar();

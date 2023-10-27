@@ -32,7 +32,11 @@ __/view_matches__               : Voir les matchs en cours
 
 __/spectate [id_match]__        : Spectate le match [id] 
 
-__/stop__                       : Arrêter de spectate un match 
+__/stop__                       : Arrêter de spectate un match
+
+__/public__                     : Passer en mode public 
+
+__/private__                    : Passer en mode privé
 
 __/list_players__               : Voir la liste des joueurs en ligne 
 

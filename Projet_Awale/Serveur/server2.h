@@ -40,69 +40,66 @@ typedef struct in_addr IN_ADDR;
 
 #include "client2.h"
 typedef struct {
-    Client* challenger ; 
-    Client* challenged ;  
+    Client* challenger; 
+    Client* challenged;  
     int state; // Indique si le défi a été fini(2) accepté (1) refusé (0) ou en attente (-1).
-    int tab[12] ; //le tableau du jeu
-    int points[2] ; 
+    int tab[12]; //le tableau du jeu
+    int points[2]; 
     int turn; //0->challenged_sock /1->challenger_sock
-    Client* observers[MAX_OBSERVERS];
-    int Client_disconnected ; 
+    Client* observers[MAX_OBSERVERS]; //tableau des observers du challenge
     int nbObservers;
+    int Client_disconnected; 
 } Challenge;
 
 typedef struct {
     char command[50] ;
     char description[200] ; 
-} Commands;
+} Commands; // structure pour décrire les différentes commandes du jeu
  
 
 
- void init(void);
- void end(void);
- void app(void);
- int init_connection(void);
- void end_connection(int sock);
- int read_client(SOCKET sock, char *buffer);
- void write_client(SOCKET sock, const char *buffer);
- void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
- void remove_client(Client *clients, int to_remove, int *actual);
- void clear_clients(Client *clients, int actual);
+void init(void);
+void end(void);
+void app(void);
+int init_connection(void);
+void end_connection(int sock);
+int read_client(SOCKET sock, char *buffer);
+void write_client(SOCKET sock, const char *buffer);
+void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
+void remove_client(Client *clients, int to_remove, int *actual);
+void clear_clients(Client *clients, int actual);
 
- void handle_list_request (Client* sender, Client *clients, int actual);
- void handle_friend_list(Client* sender);
- void handle_pending_friend_list(Client* sender);
- void view_list_matches(Client* sender);
- void define_bio(Client* sender ,char*bio); 
- void view_bio(Client* sender , Client* clients ,int actual , char* buffer);
+void handle_list_request (Client* sender, Client *clients, int actual);
+void handle_friend_list(Client* sender);
+void handle_pending_friend_list(Client* sender);
+void view_list_matches(Client* sender);
+void define_bio(Client* sender ,char*bio); 
+void view_bio(Client* sender , Client* clients ,int actual , char* buffer);
 
- void handle_friend_request(Client* sender, Client *clients, int actual, const char *buffer);
- void accept_friend_request(Client* sender, Client *clients, int actual, const char *buffer);
- void decline_friend_request(Client* sender, Client *clients, int actual, const char *buffer);
+void handle_friend_request(Client* sender, Client *clients, int actual, const char *buffer);
+void accept_friend_request(Client* sender, Client *clients, int actual, const char *buffer);
+void decline_friend_request(Client* sender, Client *clients, int actual, const char *buffer);
 
- void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer);
- void accept_challenge_request(Client* sender , Client* Clients , int actual);
- void refuse_challenge_request(Client* sender);
- void handle_game(Client* sender  , char* buffer );  
- void handle_discussion1(Client* sender  , char* buffer);
-// c'est un raccourci pour n'envoyer un message que à notre adversaire  
- void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual);
- void observe_match(Client* sender, const char *buffer);
- void send_game_to_observers(int numChallenge, const char* affichage);
- void stop_observe(Client* sender);
+void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer);
+void accept_challenge_request(Client* sender , Client* Clients , int actual);
+void refuse_challenge_request(Client* sender);
+void handle_game(Client* sender  , char* buffer );  
+void handle_discussion1(Client* sender  , char* buffer); 
+void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual);
+void observe_match(Client* sender, const char *buffer);
+void send_game_to_observers(int numChallenge, const char* affichage);
+void stop_observe(Client* sender);
 
- int switch_public(Client* sender);
- int switch_private(Client* sender);
- int can_watch(Client* sender, int match_id);
- 
- int est_nombre(const char *chaine); 
- Client* extract_target_by_name(Client* clients , const char* name, int actual);
- //préconditon : Le buffer ne doit contenir que le nom de la personne
- int find_challenge_by_challenged_client(Client challenged);
- int find_challenge_by_player(Client player); 
- int find_challenge_By_player_for_disconnection(Client player) ; 
- void extraire_entre_espaces(const char* chaine, char* resultat, size_t tailleResultat) ; 
-// int find_client_by_socket(int sock_client, Client* Clients , int actual ) ; 
+int switch_public(Client* sender);
+int switch_private(Client* sender);
+int can_watch(Client* sender, int match_id);
+
+int est_nombre(const char *chaine); 
+Client* extract_target_by_name(Client* clients , const char* name, int actual);
+int find_challenge_by_challenged_client(Client challenged);
+int find_challenge_by_player(Client player); 
+int find_challenge_By_player_for_disconnection(Client player) ; 
+void extraire_entre_espaces(const char* chaine, char* resultat, size_t tailleResultat) ; 
 
 int print_logo() ;
 char* print_logo_to_char();

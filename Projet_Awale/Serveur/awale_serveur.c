@@ -147,29 +147,3 @@ void turn(int tab[], int points[], int player, int choice){
     }
     eat(tab, points, player, cursor); 
 }
-    
-
-        
-    
-
-
-/*void gameLoop(int tab[], int points[])
-{
-    reset(tab, points, 4);
-    while (1)
-    {
-        // Send Table
-        turn(tab, points, 0);
-        // Send Table
-        turn(tab, points, 1);
-    }
-}
-/*
-int main()
-{
-    int tab[LENGTH];
-    int points[2];
-    gameLoop(tab, points);
-    return 0;
-}
-*/
