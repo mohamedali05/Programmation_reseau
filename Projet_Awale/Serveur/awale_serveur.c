@@ -8,7 +8,7 @@ void reset(int tab[], int points[], int value)
         tab[i] = value;
     }
 }
-void printTableToChar(int tab[], int points[], char* nom_joueur0, char* nom_joueur1  , char* output)
+void print_table_to_char(int tab[], int points[], char* nom_joueur0, char* nom_joueur1  , char* output)
 {
     // Initialize the string
     output[0] = '\0';
@@ -46,7 +46,7 @@ void printTableToChar(int tab[], int points[], char* nom_joueur0, char* nom_joue
 
 }
 
-void printTable(int tab[], int points[])
+void print_table(int tab[], int points[])
 {
     // 11 | 10 | 9 | 8 | 7 | 6  <- player 1
     //-------------------------
@@ -75,15 +75,15 @@ void printTable(int tab[], int points[])
     printf("  Player 0: %d\n", points[0]);
 }
 
-int isZone(int player, int choice)
+int is_zone(int player, int choice)
 {
     return choice / (LENGTH / 2) == player;
 }
-int isFinished(int tab[] , int points[] ){
-    if (points[0]> 3){
+int is_finished(int tab[] , int points[] ){
+    if (points[0]> 1){
         return 1 ; 
     }
-    if (points[1]>3 ){
+    if (points[1]> 1){
         return 2 ; 
     }
     return 0 ; 
@@ -94,7 +94,7 @@ void eat(int tab[], int points[], int player, int cursor)
 {
     while (1)
     {
-        if (!isZone(player, cursor) && (tab[cursor] == 2 || tab[cursor] == 3))
+        if (!is_zone(player, cursor) && (tab[cursor] == 2 || tab[cursor] == 3))
         {
             points[player] += tab[cursor];
             tab[cursor] = 0;
@@ -111,7 +111,7 @@ void eat(int tab[], int points[], int player, int cursor)
     }
 }
 
-int moveAllowed(int tab[] , int* choice , int player){
+int move_allowed(int tab[] , int* choice , int player){
     //0 if the move isn't allowed and 1 if the move is allowed
         if ((*choice) < LENGTH / 2 + 1 && (*choice) > 0){
         

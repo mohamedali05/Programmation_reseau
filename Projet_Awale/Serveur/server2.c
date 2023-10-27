@@ -8,7 +8,7 @@
 #include "awale_serveur.h"
 
 Challenge challenges[MAX_CLIENTS];
-int num_challenges = 0;
+int total_challenges = 0;
 
  void init(void)
 {
@@ -47,8 +47,9 @@ int num_challenges = 0;
     {"/refuse", "Refuser un challenge en attente"},
 
     {"/add_friend [pseudo]", "Envoyer une requête d'ami à [pseudo]"},
+    {"/unfriend [pseudo]", "Retirer [pseudo] de vos amis"},
     {"/accept [pseudo]", "Accepter la requête d'ami de [pseudo]"},
-    {"/define [pseudo]", "Refuser la requête d'ami de [pseudo]"},
+    {"/decline [pseudo]", "Refuser la requête d'ami de [pseudo]"},
 
     {"/discuss [pseudo] [text]", "Envoyer le texte [text] à [pseudo]"},
     {"/discuss1 [text]", "Envoyer le texte [text] au joueur adverse lors d'une partie"},
@@ -151,37 +152,36 @@ int num_challenges = 0;
                /* client disconnected */ 
                if(c == 0)
                {
-                  printf("un client s'est déco \n") ;
                   int numChallenge = find_challenge_By_player_for_disconnection(clients[i]) ;
-                  challenges[numChallenge].Client_disconnected = 1 ;
-            
-                  if (strcmp(clients[i].name ,challenges[numChallenge].challenged->name) == 0){
-                     if (challenges[numChallenge].state == -1){
-                        printf("1\n") ; 
-                        write_client(challenges[numChallenge].challenger->sock , "Le client que vous avez challengé s'est déconnecté\n") ;
-                        
-                     }else if (challenges[numChallenge].state == 1){
-                        printf("2\n") ; 
-                        write_client(challenges[numChallenge].challenger->sock , "Le client avec lequel vous jouez s'est déconnecté\n") ;
-                        challenges[numChallenge].challenger->isPlaying = 0 ; 
-                        
+
+                  if(numChallenge != -1) {
+
+                     challenges[numChallenge].Client_disconnected = 1 ;
+   
+                     if (strcmp(clients[i].name ,challenges[numChallenge].challenged->name) == 0){
+                        if (challenges[numChallenge].state == -1){
+                           write_client(challenges[numChallenge].challenger->sock , "Le client que vous avez challengé s'est déconnecté\n") ;
+                           
+                        }else if (challenges[numChallenge].state == 1){
+                           write_client(challenges[numChallenge].challenger->sock , "Le client avec lequel vous jouez s'est déconnecté\n") ;
+                           challenges[numChallenge].challenger->isPlaying = 0 ; 
+                           
+                        }
+                     }else{
+                        if (challenges[numChallenge].state == -1){
+                           write_client(challenges[numChallenge].challenged->sock , "Le client qui vous a challengé s'est déconnecté\n") ; 
+                           challenges[numChallenge].challenged->isChallenged = 0 ;
+                           
+                        }else if (challenges[numChallenge].state == 1){
+                           write_client(challenges[numChallenge].challenged->sock , "Le client avec lequel vous jouez s'est déconnecté\n") ;
+                           challenges[numChallenge].challenged->isPlaying = 0 ;
+                        }
                      }
-                  }else{
-                     if (challenges[numChallenge].state == -1){
-                        printf("3\n") ;  
-                        write_client(challenges[numChallenge].challenged->sock , "Le client que vous avez challengé s'est déconnecté\n") ; 
-                        challenges[numChallenge].challenged->isChallenged = 0 ;
-                        
-                     }else if (challenges[numChallenge].state == 1){
-                        printf("4\n") ;
-                        write_client(challenges[numChallenge].challenged->sock , "Le client avec lequel vous jouez s'est déconnecté\n") ;
-                        challenges[numChallenge].challenged->isPlaying = 0 ;
-                          
-                     }
+
+                     challenges[numChallenge].state = 2;
+
                   }
-                  printf("Bonjour1\n") ; 
-                  challenges[numChallenge].state = 2 ;
-                  printf("Bonjour2\n") ;  
+                  
                   closesocket(clients[i].sock);
                   remove_client(clients, i, &actual);
                   strncpy(buffer, client.name, BUF_SIZE - 1);
@@ -219,7 +219,7 @@ int num_challenges = 0;
                      decline_friend_request(&clients[i], clients, actual, buffer);
                   } else if((strstr(buffer, "/unfriend") != NULL)) {
                      unfriend_friend(&clients[i], clients, actual, buffer);
-                  } else if (clients[i].isPlaying && estNombre(buffer)){
+                  } else if (clients[i].isPlaying && est_nombre(buffer)){
                      handle_game(&clients[i], buffer) ; 
                   } else if(clients[i].isPlaying && (strstr(buffer, "/discuss1") != NULL)){
                      handle_discussion1(&clients[i], buffer) ; 
@@ -236,7 +236,6 @@ int num_challenges = 0;
                   } else {
                      write_client(clients[i].sock, "La commande est incorrecte");
                   }
-                  //send_message_to_all_clients(clients, client, actual, buffer, 0);
                }
                
                break;
@@ -414,7 +413,7 @@ void view_bio(Client* sender , Client* clients ,int actual , char* buffer){
 void view_list_matches(Client* sender){
    char affichage[BUF_SIZE] = "";
    int foundMatch = 0;
-   for (int i = 0 ; i<num_challenges ; i++){
+   for (int i = 0 ; i<total_challenges ; i++){
       if (challenges[i].state == 1) {
          foundMatch = 1;
          char temp[BUF_SIZE] ; 
@@ -450,20 +449,20 @@ void handle_challenge_request(Client* sender, Client *clients, int actual, const
    }
 
    // Créez une nouvelle invitation.
-   challenges[num_challenges].challenger = sender ; 
-   challenges[num_challenges].challenged = target ;    
-   challenges[num_challenges].state = -1;  // -1 indique en attente d'une réponse.
-   challenges[num_challenges].nbObservers = 0;
+   challenges[total_challenges].challenger = sender ; 
+   challenges[total_challenges].challenged = target ;    
+   challenges[total_challenges].state = -1;  // -1 indique en attente d'une réponse.
+   challenges[total_challenges].nbObservers = 0;
    target->isChallenged = 1;
 
    // Envoyez l'invitation au client ciblé.
    char invitation[BUF_SIZE];
    strcpy(invitation , sender->name) ; 
    strcat(invitation , " vous a défié.\n/ready ou /refuse pour répondre.") ; 
-   write_client(challenges[num_challenges].challenged->sock, invitation);
-   write_client(challenges[num_challenges].challenger->sock , "Challenge envoyé") ; 
+   write_client(challenges[total_challenges].challenged->sock, invitation);
+   write_client(challenges[total_challenges].challenger->sock , "Challenge envoyé") ; 
    // Incrémente le compteur des invitations.
-   num_challenges++;
+   total_challenges++;
 }
 
 Client* extract_target_by_name(Client* clients , const char* buffer, int actual){ //Get the client with its pseudo
@@ -489,8 +488,8 @@ void accept_challenge_request(Client* sender , Client* Clients ,   int actual){
    challenges[numChallenge].state = 1;
    
    reset(challenges[numChallenge].tab, challenges[numChallenge].points, 4) ;
-   challenges[num_challenges].turn = rand()%2 ; 
-   printf("%d \n", challenges[num_challenges].turn) ; 
+   challenges[total_challenges].turn = rand()%2 ; 
+   printf("%d \n", challenges[total_challenges].turn) ; 
    sender->isChallenged  = 0 ; 
    
    challenges[numChallenge].challenged->isPlaying = 1 ;
@@ -498,12 +497,12 @@ void accept_challenge_request(Client* sender , Client* Clients ,   int actual){
    
 
    write_client(socket_challenger, invitation);
-   printTableToChar(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name, affichage) ;
+   print_table_to_char(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name, affichage) ;
    write_client(socket_challenger, affichage) ; 
    write_client(socket_challenged, affichage) ;
    
    
-  if (challenges[num_challenges].turn == 0 ){ 
+  if (challenges[total_challenges].turn == 0 ){ 
       write_client(socket_challenger,"A votre tour" ) ;
       write_client(socket_challenged,"Au tour de votre adversaire" ) ;
       
@@ -683,7 +682,7 @@ void unfriend_friend(Client* sender, Client *clients, int actual, const char *bu
 }
 
 int find_challenge_by_challenged_client(Client challenged){ //return the index of the pending challenge of challenged player
-   for (int i = 0; i < num_challenges ; i++) {
+   for (int i = 0; i < total_challenges ; i++) {
       if (challenges[i].challenged->sock == challenged.sock  && challenges[i].state == -1) {
          return i;
       }
@@ -700,17 +699,17 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
    if(socket_challenger == sender->sock){
       if(challenges[numChallenge].turn) {
          //the challenger sended the request and it's his turn
-         if (moveAllowed(challenges[numChallenge].tab, &coup, challenges[numChallenge].turn )){
+         if (move_allowed(challenges[numChallenge].tab, &coup, challenges[numChallenge].turn )){
             turn(challenges[numChallenge].tab, challenges[numChallenge].points,  challenges[numChallenge].turn, coup ) ; 
-            printTableToChar(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name , affichage) ;
+            print_table_to_char(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name , affichage) ;
             write_client(socket_challenger, affichage) ; 
             write_client(socket_challenged, affichage) ;
             send_game_to_observers(numChallenge, affichage);
             challenges[numChallenge].turn = 0 ;
-            if(!isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points )){
+            if(!is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points )){
                write_client(socket_challenger,"Au tour de votre adversaire\n" ) ;
                write_client(socket_challenged,"A votre tour\n" ) ;
-            }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 1){
+            }else if(is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 1){
                write_client(socket_challenged,"Bravo vous avez gagné ;)\n" ) ;
                write_client(socket_challenger,"vous avez perdu :(\n" );
                snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenged->name);
@@ -718,12 +717,19 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
                   challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
                challenges[numChallenge].nbObservers = 0;
-            }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
+
+               char* logo = print_logo_to_char(); 
+               write_client(socket_challenger,logo) ;
+               write_client(socket_challenged,logo) ;
+               free(logo);
+            
+
+            }else if(is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
                write_client(socket_challenger,"Bravo vous avez gagné ;)\n" );
                write_client(socket_challenged,"Vous avez perdu :(\n" );
                snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenger->name);
@@ -731,11 +737,16 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
                   challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
                challenges[numChallenge].nbObservers = 0;
+
+               char* logo = print_logo_to_char(); 
+               write_client(socket_challenger,logo) ;
+               write_client(socket_challenged,logo) ;
+               free(logo);
             }
          }else{
             write_client(socket_challenger,"Mouvement illégal veuillez réessayer.\n" ) ;
@@ -746,17 +757,17 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
       
    } else if(socket_challenged == sender->sock){
       if(!challenges[numChallenge].turn) {
-         if (moveAllowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
+         if (move_allowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
             turn(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].turn, coup ) ; 
-            printTableToChar(challenges[numChallenge].tab, challenges[numChallenge].points ,challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name, affichage) ;
+            print_table_to_char(challenges[numChallenge].tab, challenges[numChallenge].points ,challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name, affichage) ;
             write_client(socket_challenger, affichage); 
             write_client(socket_challenged, affichage);
             send_game_to_observers(numChallenge, affichage);
             challenges[numChallenge].turn = 1 ;
-            if(!isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points)){
+            if(!is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points)){
                write_client(socket_challenged,"Au tour de votre adversaire\n" ) ;
                write_client(socket_challenger,"A votre tour\n" ) ;
-            }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 1){
+            }else if(is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 1){
                write_client(socket_challenged,"Bravo, vous avez gagné ;)\n" );
                write_client(socket_challenger,"Vous avez perdu :(\n" );
                snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenged->name);
@@ -764,12 +775,19 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
                   challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
                challenges[numChallenge].nbObservers = 0;
-            }else if(isFinished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
+
+               char* logo = print_logo_to_char(); 
+               write_client(socket_challenger,logo) ;
+               write_client(socket_challenged,logo) ;
+               free(logo);
+
+
+            }else if(is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
                write_client(socket_challenger,"Bravo, vous avez gagné ;)\n" );
                write_client(socket_challenged,"Vous avez perdu :(\n" );
                snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenger->name);
@@ -777,11 +795,17 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
                challenges[numChallenge].state = 2; 
                challenges[numChallenge].challenger->isPlaying = 0 ; 
                challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < sizeof(challenges[numChallenge].observers) / sizeof(challenges[numChallenge].observers[0]); i++) {
+               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) {
                   challenges[numChallenge].observers[i]->isObserving = 0;
                   challenges[numChallenge].observers[i] = NULL;
                }
                challenges[numChallenge].nbObservers = 0;
+
+               char* logo = print_logo_to_char(); 
+               write_client(socket_challenger,logo);
+               write_client(socket_challenged,logo);
+               free(logo);
+
             }
          }else{
             write_client(socket_challenged,"Mouvement illégal, veuillez réessayer.\n" ) ;
@@ -793,7 +817,7 @@ int find_challenge_by_challenged_client(Client challenged){ //return the index o
 }
 
 int find_challenge_by_player(Client player){
-   for (int i = 0; i < num_challenges ; i++) {
+   for (int i = 0; i < total_challenges ; i++) {
       if ((challenges[i].challenged->sock == player.sock || challenges[i].challenger->sock == player.sock)&& challenges[i].state ==1 
       && challenges[i].challenged->isPlaying && challenges[i].challenger->isPlaying) {
          return i;
@@ -801,7 +825,7 @@ int find_challenge_by_player(Client player){
    }
 }
 
-int estNombre(const char *chaine) {
+int est_nombre(const char *chaine) {
     // Vérifier si la chaîne est vide ou nulle
     if (chaine == NULL || chaine[0] == '\0') {
         return 0;
@@ -838,7 +862,7 @@ int estNombre(const char *chaine) {
  void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual ){
    char affichage[BUF_SIZE] ;
    char name[BUF_SIZE] ; 
-   extraireEntreEspaces(buffer , name , sizeof(name)) ; 
+   extraire_entre_espaces(buffer , name , sizeof(name)) ; 
    Client *target = extract_target_by_name(clients, name , actual);
    if (target == NULL){
       write_client(sender->sock ,"Le joueur avec lequel vous voulez discuter n'a pas été trouvé") ; 
@@ -851,7 +875,7 @@ int estNombre(const char *chaine) {
    write_client(target->sock,affichage ) ; 
 }
 
-void extraireEntreEspaces(const char* chaine, char* resultat, size_t tailleResultat) {
+void extraire_entre_espaces(const char* chaine, char* resultat, size_t tailleResultat) {
     // Recherche du premier espace dans la chaîne
     const char* premierEspace = strchr(chaine, ' ');
 
@@ -890,13 +914,13 @@ void observe_match(Client* sender, const char *buffer) {
    int match_id = atoi(match) - 1;
 
    // Vérifier si le match_id est valide
-   if (match_id >= 0 && match_id < num_challenges) {
+   if (match_id >= 0 && match_id < total_challenges) {
       if (challenges[match_id].nbObservers < MAX_OBSERVERS) {
-         if (canWatch(sender, match_id)) {
+         if (can_watch(sender, match_id)) {
             challenges[match_id].observers[challenges[match_id].nbObservers] = sender;
             challenges[match_id].nbObservers++;
             sender->isObserving = 1; 
-            printTableToChar(challenges[match_id].tab, challenges[match_id].points ,challenges[match_id].challenged->name, challenges[match_id].challenger->name, affichage) ;
+            print_table_to_char(challenges[match_id].tab, challenges[match_id].points ,challenges[match_id].challenged->name, challenges[match_id].challenger->name, affichage) ;
             write_client(sender->sock, affichage);
          } else {
             write_client(sender->sock ,"Cette partie est privée"); 
@@ -909,7 +933,7 @@ void observe_match(Client* sender, const char *buffer) {
    }
 }
 
-int canWatch(Client* sender, int match_id) {
+int can_watch(Client* sender, int match_id) {
    Client* challenged = challenges[match_id].challenged;
    Client* challenger = challenges[match_id].challenger;
    return(
@@ -927,7 +951,7 @@ void send_game_to_observers(int numChallenge, const char* affichage) {
 }
 
 void stop_observe(Client* sender) {
-    for (int i = 0; i < num_challenges; i++) {
+    for (int i = 0; i < total_challenges; i++) {
         for (int j = 0; j < challenges[i].nbObservers; j++) {
             // Si le client est trouvé dans les observateurs du challenge
             if (challenges[i].observers[j] == sender) {
@@ -962,7 +986,7 @@ int switch_public(Client* sender) {
 }
 
 int find_challenge_By_player_for_disconnection(Client player){
-   for (int i = 0; i < num_challenges ; i++) {
+   for (int i = 0; i < total_challenges ; i++) {
       if ((challenges[i].challenged->sock == player.sock || challenges[i].challenger->sock == player.sock)&& (challenges[i].state ==1 
       || challenges[i].state == -1)) {
          return i;
@@ -972,26 +996,7 @@ int find_challenge_By_player_for_disconnection(Client player){
 }
 
 
-/*
- int find_client_by_socket(int sock_client, Client* Clients , int actual ){
-   for (int i = 0 ; i<actual ; i++){
-      if(Clients[i].sock == sock_client){
-         return i ; 
-      }
-   }
-}
-*/
-
-
-
-
-
-
-
-int main(int argc, char **argv)
-{
-   init();
-
+int print_logo() {
    printf("\n");
    printf("   _____                 .__          \n");
    printf("  /  _  \\__  _  _______  |  |   ____  \n");
@@ -999,6 +1004,33 @@ int main(int argc, char **argv)
    printf("/    |    \\     /  / __ \\|  |_\\  ___/ \n");
    printf("\\____|__  /\\/\\_/  (____  /____/\\___  >\n");
    printf("        \\/             \\/          \\/ \n");
+   return 0;
+}
+
+char* print_logo_to_char() {
+    char buffer[1000]; 
+
+    snprintf(buffer, sizeof(buffer),
+        "\n"
+        "   _____                 .__          \n"
+        "  /  _  \\__  _  _______  |  |   ____  \n"
+        " /  /_\\  \\ \\/ \\/ /\\__  \\ |  | _/ __ \\ \n"
+        "/    |    \\     /  / __ \\|  |_\\  ___/ \n"
+        "\\____|__  /\\/\\_/  (____  /____/\\___  >\n"
+        "        \\/             \\/          \\/ \n");
+
+    char* result = malloc(strlen(buffer) + 1); // Allouer de la mémoire pour la chaîne résultante
+    strcpy(result, buffer); // Copier le contenu du tampon dans la chaîne résultante
+
+    return result;
+}
+
+
+int main(int argc, char **argv)
+{
+   init();
+
+   print_logo();
 
    app();
 

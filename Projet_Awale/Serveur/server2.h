@@ -93,16 +93,19 @@ typedef struct {
 
  int switch_public(Client* sender);
  int switch_private(Client* sender);
- int canWatch(Client* sender, int match_id);
+ int can_watch(Client* sender, int match_id);
  
- int estNombre(const char *chaine); 
+ int est_nombre(const char *chaine); 
  Client* extract_target_by_name(Client* clients , const char* name, int actual);
  //préconditon : Le buffer ne doit contenir que le nom de la personne
  int find_challenge_by_challenged_client(Client challenged);
  int find_challenge_by_player(Client player); 
  int find_challenge_By_player_for_disconnection(Client player) ; 
- void extraireEntreEspaces(const char* chaine, char* resultat, size_t tailleResultat) ; 
+ void extraire_entre_espaces(const char* chaine, char* resultat, size_t tailleResultat) ; 
 // int find_client_by_socket(int sock_client, Client* Clients , int actual ) ; 
+
+int print_logo() ;
+char* print_logo_to_char();
  
    
 
