@@ -83,7 +83,8 @@ void decline_friend_request(Client* sender, Client *clients, int actual, const c
 void handle_challenge_request(Client* sender, Client *clients, int actual, const char *buffer);
 void accept_challenge_request(Client* sender , Client* Clients , int actual);
 void refuse_challenge_request(Client* sender);
-void handle_game(Client* sender  , char* buffer );  
+void handle_game(Client* sender  , char* buffer ); 
+void handle_turn(int numChallenge , int coup, char* affichage) ;  
 void handle_forfait(Client* sender , char* buffer );  
 void handle_endgame(int num_chall , int socket_gagnant , int socket_perdant , char* fin) ; 
 void handle_discussion1(Client* sender  , char* buffer); 

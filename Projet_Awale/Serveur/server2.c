@@ -714,11 +714,7 @@ void handle_game(Client* sender, char* buffer){
    if(socket_challenger == sender->sock){
       if(challenges[numChallenge].turn) {
          if (move_allowed(challenges[numChallenge].tab, &coup, challenges[numChallenge].turn )){
-            turn(challenges[numChallenge].tab, challenges[numChallenge].points,  challenges[numChallenge].turn, coup ) ; 
-            print_table_to_char(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name , affichage) ;
-            write_client(socket_challenger, affichage) ; 
-            write_client(socket_challenged, affichage) ;
-            send_game_to_observers(numChallenge, affichage); //envoyer le jeu aux observers
+            handle_turn(numChallenge , coup , affichage) ; 
             challenges[numChallenge].turn = 0 ;
             if(!is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points )){
                write_client(socket_challenger,"Au tour de votre adversaire\n" ) ;
@@ -727,8 +723,7 @@ void handle_game(Client* sender, char* buffer){
                handle_endgame(numChallenge , socket_challenged , socket_challenger , fin) ;
 
             }else if(is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
-               handle_endgame(numChallenge , socket_challenger , socket_challenged , fin) ; 
-               
+               handle_endgame(numChallenge , socket_challenger , socket_challenged , fin) ;  
             }
          }else{
             write_client(socket_challenger,"Mouvement illégal veuillez réessayer.\n" ) ;
@@ -740,11 +735,7 @@ void handle_game(Client* sender, char* buffer){
    } else if(socket_challenged == sender->sock){
       if(!challenges[numChallenge].turn) {
          if (move_allowed(challenges[numChallenge].tab , &coup, challenges[numChallenge].turn )){
-            turn(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].turn, coup ) ; 
-            print_table_to_char(challenges[numChallenge].tab, challenges[numChallenge].points ,challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name, affichage) ;
-            write_client(socket_challenger, affichage); 
-            write_client(socket_challenged, affichage);
-            send_game_to_observers(numChallenge, affichage);
+            handle_turn(numChallenge , coup , affichage) ; 
             challenges[numChallenge].turn = 1 ;
             if(!is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points)){
                write_client(socket_challenged,"Au tour de votre adversaire\n" ) ;
@@ -763,6 +754,14 @@ void handle_game(Client* sender, char* buffer){
       }
    }
 }
+void handle_turn(int numChallenge , int coup , char* affichage){
+   turn(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].turn, coup ) ; 
+   print_table_to_char(challenges[numChallenge].tab, challenges[numChallenge].points ,challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name, affichage) ;
+   write_client(challenges[numChallenge].challenger->sock, affichage); 
+   write_client(challenges[numChallenge].challenged->sock, affichage);
+   send_game_to_observers(numChallenge, affichage);  //envoyer le jeu aux observers
+}
+
 void handle_forfait(Client* sender , char* buffer ){
    int numChallenge = find_challenge_by_player(*sender) ;
    int socket_challenger  = challenges[numChallenge].challenger->sock; 
@@ -770,10 +769,10 @@ void handle_forfait(Client* sender , char* buffer ){
    char fin[BUF_SIZE]; 
 
    if(socket_challenged == sender->sock){
-      write_client(socket_challenger , "Votre adversaire a déclaré forfait") ; 
+      write_client(socket_challenger , "Votre adversaire a déclaré forfait \n") ; 
       handle_endgame(numChallenge , socket_challenger , socket_challenged , fin) ;
    }else{
-      write_client(socket_challenged , "Votre adversaire a déclaré forfait") ; 
+      write_client(socket_challenged , "Votre adversaire a déclaré forfait \n") ; 
       handle_endgame(numChallenge , socket_challenged , socket_challenger , fin) ;
    }
    
@@ -791,7 +790,6 @@ void handle_endgame(int num_chall , int socket_gagnant , int socket_perdant , ch
       challenges[num_chall].observers[i] = NULL;
    }
    challenges[num_chall].nbObservers = 0;
-
    char* logo = print_logo_to_char(); 
    write_client(socket_gagnant,logo) ;
    write_client(socket_perdant,logo) ;
