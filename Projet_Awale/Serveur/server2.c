@@ -224,7 +224,10 @@ int total_challenges = 0;
                      handle_game(&clients[i], buffer) ; 
                   } else if(clients[i].isPlaying && (strstr(buffer, "/discuss1") != NULL)){
                      handle_discussion1(&clients[i], buffer) ; 
-                  } else if((strstr(buffer, "/discuss1") == NULL) && (strstr(buffer, "/discuss") != NULL)){
+                  } else if(clients[i].isPlaying && strcmp(buffer, "/forfait") == 0){
+                     printf("passe dans la boucle if") ; 
+                     handle_forfait(&clients[i], buffer) ; 
+                  }else if((strstr(buffer, "/discuss1") == NULL) && (strstr(buffer, "/discuss") != NULL)){
                      handle_discussion(&clients[i], buffer, clients, actual);
                   } else if((strstr(buffer, "/spectate") != NULL) && !clients[i].isObserving && !clients[i].isPlaying) {
                      observe_match(&clients[i], buffer);
@@ -721,43 +724,11 @@ void handle_game(Client* sender, char* buffer){
                write_client(socket_challenger,"Au tour de votre adversaire\n" ) ;
                write_client(socket_challenged,"A votre tour\n" ) ;
             }else if(is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 1){
-               write_client(socket_challenged,"Bravo vous avez gagné ;)\n" ) ;
-               write_client(socket_challenger,"vous avez perdu :(\n" );
-               snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenged->name);
-               send_game_to_observers(numChallenge, fin); //envoyer le jeu aux observers
-               challenges[numChallenge].state = 2; 
-               challenges[numChallenge].challenger->isPlaying = 0 ; 
-               challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) { //reinitialiser les observateurs
-                  challenges[numChallenge].observers[i]->isObserving = 0;
-                  challenges[numChallenge].observers[i] = NULL;
-               }
-               challenges[numChallenge].nbObservers = 0;
-
-               char* logo = print_logo_to_char(); 
-               write_client(socket_challenger,logo) ;
-               write_client(socket_challenged,logo) ;
-               free(logo);
-            
+               handle_endgame(numChallenge , socket_challenged , socket_challenger , fin) ;
 
             }else if(is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
-               write_client(socket_challenger,"Bravo vous avez gagné ;)\n" );
-               write_client(socket_challenged,"Vous avez perdu :(\n" );
-               snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenger->name);
-               send_game_to_observers(numChallenge, fin);
-               challenges[numChallenge].state = 2; 
-               challenges[numChallenge].challenger->isPlaying = 0 ; 
-               challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) { //reinitialiser les observateurs
-                  challenges[numChallenge].observers[i]->isObserving = 0;
-                  challenges[numChallenge].observers[i] = NULL;
-               }
-               challenges[numChallenge].nbObservers = 0;
-
-               char* logo = print_logo_to_char(); 
-               write_client(socket_challenger,logo) ;
-               write_client(socket_challenged,logo) ;
-               free(logo);
+               handle_endgame(numChallenge , socket_challenger , socket_challenged , fin) ; 
+               
             }
          }else{
             write_client(socket_challenger,"Mouvement illégal veuillez réessayer.\n" ) ;
@@ -779,44 +750,10 @@ void handle_game(Client* sender, char* buffer){
                write_client(socket_challenged,"Au tour de votre adversaire\n" ) ;
                write_client(socket_challenger,"A votre tour\n" ) ;
             }else if(is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 1){
-               write_client(socket_challenged,"Bravo, vous avez gagné ;)\n" );
-               write_client(socket_challenger,"Vous avez perdu :(\n" );
-               snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenged->name);
-               send_game_to_observers(numChallenge, fin); //envoyer le jeu aux observers
-               challenges[numChallenge].state = 2; 
-               challenges[numChallenge].challenger->isPlaying = 0 ; 
-               challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) { //reinitialiser les observateurs
-                  challenges[numChallenge].observers[i]->isObserving = 0;
-                  challenges[numChallenge].observers[i] = NULL;
-               }
-               challenges[numChallenge].nbObservers = 0;
-
-               char* logo = print_logo_to_char(); 
-               write_client(socket_challenger,logo) ;
-               write_client(socket_challenged,logo) ;
-               free(logo);
-
+               handle_endgame(numChallenge , socket_challenged , socket_challenger , fin) ; 
 
             }else if(is_finished(challenges[numChallenge].tab ,challenges[numChallenge].points) == 2){
-               write_client(socket_challenger,"Bravo, vous avez gagné ;)\n" );
-               write_client(socket_challenged,"Vous avez perdu :(\n" );
-               snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[numChallenge].challenger->name);
-               send_game_to_observers(numChallenge, fin); //envoyer le jeu aux observers
-               challenges[numChallenge].state = 2; 
-               challenges[numChallenge].challenger->isPlaying = 0 ; 
-               challenges[numChallenge].challenged->isPlaying = 0 ;
-               for (int i = 0; i < challenges[numChallenge].nbObservers; i++) { //reinitialiser les observateurs
-                  challenges[numChallenge].observers[i]->isObserving = 0;
-                  challenges[numChallenge].observers[i] = NULL;
-               }
-               challenges[numChallenge].nbObservers = 0;
-
-               char* logo = print_logo_to_char(); 
-               write_client(socket_challenger,logo);
-               write_client(socket_challenged,logo);
-               free(logo);
-
+               handle_endgame(numChallenge , socket_challenger , socket_challenged , fin) ;
             }
          }else{
             write_client(socket_challenged,"Mouvement illégal, veuillez réessayer.\n" ) ;
@@ -826,6 +763,42 @@ void handle_game(Client* sender, char* buffer){
       }
    }
 }
+void handle_forfait(Client* sender , char* buffer ){
+   int numChallenge = find_challenge_by_player(*sender) ;
+   int socket_challenger  = challenges[numChallenge].challenger->sock; 
+   int socket_challenged = challenges[numChallenge].challenged->sock;
+   char fin[BUF_SIZE]; 
+
+   if(socket_challenged == sender->sock){
+      write_client(socket_challenger , "Votre adversaire a déclaré forfait") ; 
+      handle_endgame(numChallenge , socket_challenger , socket_challenged , fin) ;
+   }else{
+      write_client(socket_challenged , "Votre adversaire a déclaré forfait") ; 
+      handle_endgame(numChallenge , socket_challenged , socket_challenger , fin) ;
+   }
+   
+}
+void handle_endgame(int num_chall , int socket_gagnant , int socket_perdant , char* fin){
+   write_client(socket_gagnant,"Bravo vous avez gagné ;)\n" ) ;
+   write_client(socket_perdant,"vous avez perdu :(\n" );
+   snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[num_chall].challenged->name);
+   send_game_to_observers(num_chall, fin); //envoyer le jeu aux observers
+   challenges[num_chall].state = 2; 
+   challenges[num_chall].challenger->isPlaying = 0 ; 
+   challenges[num_chall].challenged->isPlaying = 0 ;
+   for (int i = 0; i < challenges[num_chall].nbObservers; i++) { //reinitialiser les observateurs
+      challenges[num_chall].observers[i]->isObserving = 0;
+      challenges[num_chall].observers[i] = NULL;
+   }
+   challenges[num_chall].nbObservers = 0;
+
+   char* logo = print_logo_to_char(); 
+   write_client(socket_gagnant,logo) ;
+   write_client(socket_perdant,logo) ;
+   free(logo);
+}
+
+
 
 /*Permet de trouver le challenge en cours associé à un joueur*/
 int find_challenge_by_player(Client player){

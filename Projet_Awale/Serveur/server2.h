@@ -84,6 +84,8 @@ void handle_challenge_request(Client* sender, Client *clients, int actual, const
 void accept_challenge_request(Client* sender , Client* Clients , int actual);
 void refuse_challenge_request(Client* sender);
 void handle_game(Client* sender  , char* buffer );  
+void handle_forfait(Client* sender , char* buffer );  
+void handle_endgame(int num_chall , int socket_gagnant , int socket_perdant , char* fin) ; 
 void handle_discussion1(Client* sender  , char* buffer); 
 void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actual);
 void observe_match(Client* sender, const char *buffer);
@@ -93,7 +95,6 @@ void stop_observe(Client* sender);
 int switch_public(Client* sender);
 int switch_private(Client* sender);
 int can_watch(Client* sender, int match_id);
-
 int est_nombre(const char *chaine); 
 Client* extract_target_by_name(Client* clients , const char* name, int actual);
 int find_challenge_by_challenged_client(Client challenged);
