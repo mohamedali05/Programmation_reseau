@@ -80,10 +80,10 @@ int is_zone(int player, int choice)
     return choice / (LENGTH / 2) == player;
 }
 int is_finished(int tab[] , int points[] ){
-    if (points[0]> 1){
+    if (points[0]> 5){
         return 1 ; 
     }
-    if (points[1]> 1){
+    if (points[1]> 5){
         return 2 ; 
     }
     return 0 ; 
@@ -118,7 +118,7 @@ int move_allowed(int tab[] , int* choice , int player){
             (*choice) = (*choice) - 1 ;
             if (player == 1)
             {
-                (*choice) = LENGTH - 1 - (*choice);
+                (*choice) = LENGTH/2 + (*choice);
             }
             if (tab[(*choice)] > 0){
                 return 1 ; 
