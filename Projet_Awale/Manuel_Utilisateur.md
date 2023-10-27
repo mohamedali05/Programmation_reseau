@@ -10,7 +10,11 @@ __/challenge [pseudo]__         : Défier [pseudo] pour une partie
 
 __/ready__                      : Accepter un challenge en attente
 
-__/refuse__                     : Refuser un challenge en attente 
+__/refuse__                     : Refuser un challenge en attente
+
+__[un_nombre]__                 : Joue un coup si une partie est en cours et que c'est notre tour
+
+__/forfait__                    : déclarer forfait si une partie est en cours
 
 __/add_friend [pseudo]__        : Envoyer une requête d'ami à [pseudo] 
 
