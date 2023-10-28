@@ -225,7 +225,6 @@ int total_challenges = 0;
                   } else if(clients[i].isPlaying && (strstr(buffer, "/discuss1") != NULL)){
                      handle_discussion1(&clients[i], buffer) ; 
                   } else if(clients[i].isPlaying && strcmp(buffer, "/forfait") == 0){
-                     printf("passe dans la boucle if") ; 
                      handle_forfait(&clients[i], buffer) ; 
                   }else if((strstr(buffer, "/discuss1") == NULL) && (strstr(buffer, "/discuss") != NULL)){
                      handle_discussion(&clients[i], buffer, clients, actual);
@@ -754,6 +753,8 @@ void handle_game(Client* sender, char* buffer){
       }
    }
 }
+
+/*Permet de gérer un tour d'une partie*/
 void handle_turn(int numChallenge , int coup , char* affichage){
    turn(challenges[numChallenge].tab, challenges[numChallenge].points, challenges[numChallenge].turn, coup ) ; 
    print_table_to_char(challenges[numChallenge].tab, challenges[numChallenge].points ,challenges[numChallenge].challenged->name, challenges[numChallenge].challenger->name, affichage) ;
@@ -762,6 +763,7 @@ void handle_turn(int numChallenge , int coup , char* affichage){
    send_game_to_observers(numChallenge, affichage);  //envoyer le jeu aux observers
 }
 
+/*Permet de gérer le forfait d'un joueur*/
 void handle_forfait(Client* sender , char* buffer ){
    int numChallenge = find_challenge_by_player(*sender) ;
    int socket_challenger  = challenges[numChallenge].challenger->sock; 
@@ -777,9 +779,11 @@ void handle_forfait(Client* sender , char* buffer ){
    }
    
 }
+
+/*Permet de gérer la fin d'une partie*/
 void handle_endgame(int num_chall , int socket_gagnant , int socket_perdant , char* fin){
    write_client(socket_gagnant,"Bravo vous avez gagné ;)\n" ) ;
-   write_client(socket_perdant,"vous avez perdu :(\n" );
+   write_client(socket_perdant,"Vous avez perdu :(\n" );
    snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[num_chall].challenged->name);
    send_game_to_observers(num_chall, fin); //envoyer le jeu aux observers
    challenges[num_chall].state = 2; 
@@ -795,7 +799,6 @@ void handle_endgame(int num_chall , int socket_gagnant , int socket_perdant , ch
    write_client(socket_perdant,logo) ;
    free(logo);
 }
-
 
 
 /*Permet de trouver le challenge en cours associé à un joueur*/

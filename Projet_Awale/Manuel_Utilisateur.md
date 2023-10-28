@@ -12,9 +12,9 @@ __/ready__                      : Accepter un challenge en attente
 
 __/refuse__                     : Refuser un challenge en attente
 
-__[un_nombre]__                 : Joue un coup si une partie est en cours et que c'est notre tour
+__[un_nombre]__                 : Jouer un coup lors d'une partie
 
-__/forfait__                    : déclarer forfait si une partie est en cours
+__/forfait__                    : Déclarer forfait si une partie est en cours
 
 __/add_friend [pseudo]__        : Envoyer une requête d'ami à [pseudo] 
 
