@@ -46,6 +46,8 @@ int total_challenges = 0;
     {"/ready", "Accepter un challenge en attente"},
     {"/refuse", "Refuser un challenge en attente"},
 
+    {"/forfait", "Déclarer forfait lors d'une partie"},
+
     {"/add_friend [pseudo]", "Envoyer une requête d'ami à [pseudo]"},
     {"/unfriend [pseudo]", "Retirer [pseudo] de vos amis"},
     {"/accept [pseudo]", "Accepter la requête d'ami de [pseudo]"},
