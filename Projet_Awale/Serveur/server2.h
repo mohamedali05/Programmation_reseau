@@ -33,7 +33,7 @@ typedef struct in_addr IN_ADDR;
 #define MAX_CLIENTS     100
 #define MAX_FRIENDS     20
 #define MAX_PENDING_FRIEND_REQ     50
-#define MAX_OBSERVERS     1
+#define MAX_OBSERVERS     5
 
 
 #define BUF_SIZE    1024
