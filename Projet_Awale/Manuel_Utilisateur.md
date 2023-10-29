@@ -60,6 +60,6 @@ __/list_commands__              : Voir la liste des commandes disponibles
     le.nguyen@insa-lyon.fr
     [@Khai2002](https:__/__/github.com__/Khai2002)
     
-- Mohammed-Ali LAJNEF
-    mohammed_ali.lajnef@insa-lyon.fr
-    [@mohammedali05](https:__/__/github.com__/mohammedali05)
+- Mohamed-Ali LAJNEF
+    mohamed_ali.lajnef@insa-lyon.fr
+    [@mohamedali05](https:__/__/github.com__/mohamedali05)
