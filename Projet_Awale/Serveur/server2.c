@@ -132,6 +132,23 @@ int total_challenges = 0;
             continue;
          }
 
+         /* Check if the client's name already exists in the list */
+         int name_exists = 0;
+         for (int i = 0; i < actual; i++) {
+            if(strcmp(clients[i].name, buffer) == 0) {
+               name_exists = 1;
+               break;
+            }
+         }
+
+         if(name_exists) {
+            /* Client with the same name already exists, reject the connection */
+            char reject_message[] = "Un joueur avec ce nom existe déjà. Connexion refusée.\n";
+            write_client(csock, reject_message);
+            close(csock);
+            continue;
+         }
+
          /* what is the new maximum fd ? */
          max = csock > max ? csock : max;
 
@@ -141,6 +158,8 @@ int total_challenges = 0;
          strncpy(c.name, buffer, BUF_SIZE - 1);
          clients[actual] = c;
          actual++;
+
+         write_client(csock, "Tapez /list_commands pour voir la liste des commandes disponibles\n");
       }
       else
       {
@@ -727,7 +746,7 @@ void handle_game(Client* sender, char* buffer){
                handle_endgame(numChallenge , socket_challenger , socket_challenged , fin) ;  
             }
          }else{
-            write_client(socket_challenger,"Mouvement illégal veuillez réessayer.\n" ) ;
+            write_client(socket_challenger,"Mouvement illégal, veuillez réessayer.\n" ) ;
          }
       }else{
          write_client(socket_challenger, "Au tour de votre adversaire\n") ;  
@@ -784,7 +803,7 @@ void handle_forfait(Client* sender , char* buffer ){
 
 /*Permet de gérer la fin d'une partie*/
 void handle_endgame(int num_chall , int socket_gagnant , int socket_perdant , char* fin){
-   write_client(socket_gagnant,"Bravo vous avez gagné ;)\n" ) ;
+   write_client(socket_gagnant,"Bravo, vous avez gagné ;)\n" ) ;
    write_client(socket_perdant,"Vous avez perdu :(\n" );
    snprintf(fin, BUF_SIZE, "%s a gagné.", challenges[num_chall].challenged->name);
    send_game_to_observers(num_chall, fin); //envoyer le jeu aux observers
@@ -853,7 +872,7 @@ void handle_discussion(Client* sender  , char* buffer ,Client* clients ,int actu
    extraire_entre_espaces(buffer , name , sizeof(name)) ; 
    Client *target = extract_target_by_name(clients, name , actual);
    if (target == NULL){
-      write_client(sender->sock ,"Le joueur avec lequel vous voulez discuter n'a pas été trouvé") ; 
+      write_client(sender->sock ,"Le joueur avec lequel vous voulez discuter n'existe pas") ; 
       return ; 
    }
    char* buffer_start = buffer + strlen("/discuss") + strlen(target->name) + 2  ;

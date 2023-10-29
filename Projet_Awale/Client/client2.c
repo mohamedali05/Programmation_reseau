@@ -35,7 +35,9 @@ static void app(const char *address, const char *name)
    /* send our name */
    write_server(sock, name);
 
-   printf("Tapez /list_commands pour voir la liste des commandes disponibles\n");
+   print_logo();
+   printf("Press Enter to Play");
+   getchar();
 
    while(1)
    {
@@ -169,11 +171,6 @@ int main(int argc, char **argv)
    }
 
    init();
-
-   print_logo();
-
-   printf("Press Enter to Play");
-   getchar();
 
    app(argv[1], argv[2]);
 

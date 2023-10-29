@@ -12,7 +12,7 @@ __/ready__                      : Accepter un challenge en attente
 
 __/refuse__                     : Refuser un challenge en attente
 
-__[un_nombre]__                 : Jouer un coup lors d'une partie
+__[un_nombre]__                 : Jouer un coup lors d'une partie (1-6 ; on compte de gauche à droite pour les deux joueurs)
 
 __/forfait__                    : Déclarer forfait si une partie est en cours
 

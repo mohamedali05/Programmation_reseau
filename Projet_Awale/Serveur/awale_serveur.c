@@ -86,8 +86,7 @@ int is_finished(int tab[] , int points[] ){
     if (points[1]> 5){
         return 2 ; 
     }
-    return 0 ; 
-    
+    return 0 ;
 }
 
 void eat(int tab[], int points[], int player, int cursor)
@@ -118,7 +117,7 @@ int move_allowed(int tab[] , int* choice , int player){
             (*choice) = (*choice) - 1 ;
             if (player == 1)
             {
-                (*choice) = LENGTH/2 + (*choice);
+                (*choice) = LENGTH - 1 - (*choice);
             }
             if (tab[(*choice)] > 0){
                 return 1 ; 
