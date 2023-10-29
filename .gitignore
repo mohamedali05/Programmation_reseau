@@ -4,7 +4,6 @@
 
 # Executables
 *.exe
-*.exec
 
 # VScode
 .vscode/
